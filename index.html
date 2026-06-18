@@ -3,61 +3,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบตรวจสอบคาบสอน - การงานอาชีพ</title>
-    <!-- Tailwind CSS สำหรับจัดรูปแบบ Minimal Formal -->
+    <title>ระบบตรวจสอบคาบสอน - กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี</title>
+    <meta name="description" content="ระบบตรวจสอบและแลกคาบสอน กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี สำหรับบริหารจัดการตารางสอนของครูผู้สอน">
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Sarabun สำหรับความเป็นทางการของเอกสารราชการไทย -->
-    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts: Sarabun -->
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sarabun: ['Sarabun', 'sans-serif'],
+                    },
+                    colors: {
+                        navy: {
+                            50: '#f0f3f8',
+                            100: '#dce3ef',
+                            200: '#b8c7df',
+                            300: '#8fa7cb',
+                            400: '#6b87b5',
+                            500: '#4d6a9a',
+                            600: '#3d5580',
+                            700: '#2f4163',
+                            800: '#1e2d47',
+                            900: '#111b2e',
+                            950: '#0a1019',
+                        },
+                        gold: {
+                            50: '#fdfaf2',
+                            100: '#f9f0d8',
+                            200: '#f2e0ae',
+                            300: '#e9cc7d',
+                            400: '#ddb54e',
+                            500: '#c99a2e',
+                            600: '#a77b22',
+                            700: '#835e1d',
+                            800: '#5e431a',
+                            900: '#3a2a12',
+                        },
+                    },
+                },
+            },
+        }
+    </script>
     <style>
-        body { font-family: 'Sarabun', sans-serif; background-color: #f8fafc; color: #1e293b; }
-        .tab-btn.active { border-bottom: 2px solid #0f172a; font-weight: 600; color: #0f172a; }
+        * { box-sizing: border-box; }
+        body {
+            font-family: 'Sarabun', sans-serif;
+            background-color: #f0f3f8;
+            color: #1e2d47;
+            min-height: 100vh;
+        }
+
+        /* Subtle background pattern */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+                radial-gradient(ellipse at 20% 0%, rgba(30,45,71,0.03) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 100%, rgba(201,154,46,0.04) 0%, transparent 60%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Tab system */
+        .tab-btn {
+            position: relative;
+            transition: color 0.25s ease, background-color 0.2s ease;
+        }
+        .tab-btn::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2.5px;
+            background: #1e2d47;
+            border-radius: 2px 2px 0 0;
+            transition: width 0.3s ease;
+        }
+        .tab-btn.active::after {
+            width: 70%;
+        }
+        .tab-btn.active {
+            color: #1e2d47;
+            font-weight: 600;
+            background-color: rgba(30,45,71,0.04);
+        }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        /* Table */
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #cbd5e1; padding: 12px 16px; text-align: left; }
-        th { background-color: #f1f5f9; font-weight: 600; font-size: 0.95rem; }
-        td { font-size: 0.9rem; }
+        th, td {
+            border: 1px solid #dce3ef;
+            padding: 12px 16px;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        th {
+            background: linear-gradient(180deg, #f0f3f8 0%, #e6ebf3 100%);
+            font-weight: 600;
+            font-size: 0.88rem;
+            color: #2f4163;
+            letter-spacing: 0.02em;
+        }
+        tbody tr { transition: background-color 0.15s ease; }
+        tbody tr:nth-child(even) td { background-color: #fafbfd; }
+        tbody tr:hover td { background-color: #eef2f8; }
+
+        /* Admin */
         .admin-only { display: none; }
-        /* Modal Styles */
+
+        /* Modal */
         #msg-modal { display: none; }
         #msg-modal.active { display: flex; }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #f0f3f8; }
+        ::-webkit-scrollbar-thumb { background: #b8c7df; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #8fa7cb; }
+
+        /* Focus ring */
+        select:focus, input:focus {
+            outline: none;
+            border-color: #4d6a9a;
+            box-shadow: 0 0 0 3px rgba(77,106,154,0.12);
+        }
+
+        /* Buttons */
+        .btn-primary {
+            background: linear-gradient(135deg, #1e2d47 0%, #2f4163 100%);
+            color: white;
+            border: none;
+            transition: all 0.25s ease;
+            box-shadow: 0 1px 3px rgba(30,45,71,0.2);
+        }
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #2f4163 0%, #3d5580 100%);
+            box-shadow: 0 2px 6px rgba(30,45,71,0.3);
+            transform: translateY(-1px);
+        }
+        .btn-primary:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(30,45,71,0.2);
+        }
+        .btn-outline {
+            background: white;
+            color: #2f4163;
+            border: 1px solid #b8c7df;
+            transition: all 0.25s ease;
+        }
+        .btn-outline:hover {
+            background: #f0f3f8;
+            border-color: #8fa7cb;
+        }
+
+        /* Card shadow */
+        .card {
+            background: white;
+            border: 1px solid #dce3ef;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(30,45,71,0.06), 0 4px 12px rgba(30,45,71,0.04);
+        }
+
+        /* Header gradient bar */
+        .header-bar {
+            background: linear-gradient(135deg, #1e2d47 0%, #2f4163 60%, #3d5580 100%);
+            height: 4px;
+            border-radius: 10px 10px 0 0;
+        }
+
+        /* Fade in animation */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.35s ease forwards;
+        }
+
+        /* Schedule cell */
+        .schedule-cell {
+            min-width: 120px;
+            vertical-align: top;
+        }
+        .schedule-cell-content {
+            padding: 4px 0;
+        }
+        .schedule-cell-content .subject-code {
+            font-weight: 600;
+            color: #1e2d47;
+            font-size: 0.88rem;
+        }
+        .schedule-cell-content .teacher-name {
+            color: #4d6a9a;
+            font-size: 0.78rem;
+            margin-top: 1px;
+        }
+
+        /* Empty cell */
+        td.empty-cell {
+            background-color: #f8f9fc;
+            background-image: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 8px,
+                rgba(30,45,71,0.015) 8px,
+                rgba(30,45,71,0.015) 16px
+            );
+        }
+
+        /* Search result card */
+        .result-card {
+            border: 1px solid #dce3ef;
+            background: white;
+            padding: 14px 18px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(30,45,71,0.04);
+        }
+        .result-card:hover {
+            border-color: #8fa7cb;
+            box-shadow: 0 2px 8px rgba(30,45,71,0.08);
+            transform: translateY(-1px);
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #22c55e;
+            flex-shrink: 0;
+            box-shadow: 0 0 0 3px rgba(34,197,94,0.15);
+        }
+
+        /* Delete button */
+        .btn-delete {
+            color: #dc2626;
+            font-size: 0.85rem;
+            font-weight: 500;
+            padding: 2px 8px;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+        }
+        .btn-delete:hover {
+            background: #fef2f2;
+            color: #b91c1c;
+        }
+
+        /* Gold accent line */
+        .accent-line {
+            width: 40px;
+            height: 3px;
+            background: linear-gradient(90deg, #c99a2e, #ddb54e);
+            border-radius: 2px;
+        }
+
+        /* Print styles */
+        @media print {
+            body { background: white; }
+            body::before { display: none; }
+            .card { box-shadow: none; border: 1px solid #ccc; }
+            nav, #btn-login, #btn-logout, #user-info { display: none !important; }
+        }
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+<body class="font-sarabun flex flex-col items-center p-4 md:p-8 relative z-10">
 
     <!-- Header Section -->
-    <header class="w-full max-w-6xl flex flex-col md:flex-row justify-between items-center bg-white p-6 rounded-lg shadow-sm border border-slate-200 mb-6">
-        <div class="flex items-center gap-6">
-            <img src="School badge.png" alt="ตราโรงเรียน" style="width: 3cm; height: auto; object-fit: contain;" onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'113\' height=\'113\' viewBox=\'0 0 113 113\'><rect width=\'113\' height=\'113\' fill=\'%23e2e8f0\'/><text x=\'50%\' y=\'50%\' font-family=\'sans-serif\' font-size=\'12\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%2364748b\'>[ตราโรงเรียน]</text></svg>'">
-            <div>
-                <h1 class="text-2xl font-bold text-slate-800">ระบบตรวจสอบและแลกคาบสอน</h1>
-                <p class="text-slate-600 text-lg">กลุ่มสาระการเรียนรู้การงานอาชีพ</p>
+    <header class="w-full max-w-6xl card overflow-hidden mb-6 fade-in">
+        <div class="header-bar"></div>
+        <div class="flex flex-col md:flex-row justify-between items-center p-6">
+            <div class="flex items-center gap-5">
+                <img src="School badge.png"
+                     alt="ตราโรงเรียน มอ.วิทยานุสรณ์"
+                     class="flex-shrink-0"
+                     style="width: 2.8cm; height: auto; object-fit: contain;"
+                     onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'106\' height=\'106\' viewBox=\'0 0 106 106\'><rect width=\'106\' height=\'106\' rx=\'12\' fill=\'%23f0f3f8\'/><text x=\'50%\' y=\'50%\' font-family=\'sans-serif\' font-size=\'11\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%234d6a9a\'>[ตราโรงเรียน]</text></svg>'">
+                <div>
+                    <h1 class="text-2xl font-bold text-navy-800 leading-tight">ระบบตรวจสอบและแลกคาบสอน</h1>
+                    <div class="accent-line mt-2 mb-2"></div>
+                    <p class="text-navy-500 text-base font-medium">กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี</p>
+                </div>
             </div>
-        </div>
-        <div class="mt-4 md:mt-0 flex items-center gap-4">
-            <div id="user-info" class="text-sm text-slate-600 hidden"></div>
-            <button id="btn-login" class="px-6 py-2 bg-slate-800 text-white rounded font-medium hover:bg-slate-700 transition">เข้าสู่ระบบ (ผู้ดูแล)</button>
-            <button id="btn-logout" class="px-6 py-2 border border-slate-300 text-slate-700 rounded font-medium hover:bg-slate-50 transition hidden">ออกจากระบบ</button>
+            <div class="mt-4 md:mt-0 flex items-center gap-3">
+                <div id="user-info" class="text-sm text-navy-500 hidden font-medium"></div>
+                <button id="btn-login" class="btn-primary px-6 py-2.5 rounded-lg font-semibold text-sm">เข้าสู่ระบบ (ผู้ดูแล)</button>
+                <button id="btn-logout" class="btn-outline px-6 py-2.5 rounded-lg font-semibold text-sm hidden">ออกจากระบบ</button>
+            </div>
         </div>
     </header>
 
     <!-- Main Content -->
-    <main class="w-full max-w-6xl bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-        
+    <main class="w-full max-w-6xl card overflow-hidden fade-in" style="animation-delay: 0.08s;">
+
         <!-- Navigation Tabs -->
-        <nav class="flex border-b border-slate-200 px-2 bg-slate-50 overflow-x-auto">
-            <button class="tab-btn active px-6 py-4 text-slate-500 hover:text-slate-800 whitespace-nowrap" data-target="tab-schedule">ตารางสอนรวม</button>
-            <button class="tab-btn px-6 py-4 text-slate-500 hover:text-slate-800 whitespace-nowrap" data-target="tab-find">ค้นหา / หาผู้แทนคาบ</button>
-            <button class="tab-btn admin-only px-6 py-4 text-slate-500 hover:text-slate-800 whitespace-nowrap" data-target="tab-admin">จัดการข้อมูล (Admin)</button>
+        <nav class="flex border-b border-navy-100 px-1 bg-navy-50/50 overflow-x-auto">
+            <button class="tab-btn active px-6 py-4 text-navy-400 hover:text-navy-800 whitespace-nowrap text-sm font-medium" data-target="tab-schedule">ตารางสอนรวม</button>
+            <button class="tab-btn px-6 py-4 text-navy-400 hover:text-navy-800 whitespace-nowrap text-sm font-medium" data-target="tab-find">ค้นหาผู้แทนคาบ</button>
+            <button class="tab-btn admin-only px-6 py-4 text-navy-400 hover:text-navy-800 whitespace-nowrap text-sm font-medium" data-target="tab-admin">จัดการข้อมูล (Admin)</button>
         </nav>
 
         <div class="p-6">
             <!-- TAB 1: ตารางสอนรวม -->
             <section id="tab-schedule" class="tab-content active">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold text-slate-800">ตารางสอนรวมทั้งหมด</h2>
-                    <select id="filter-day" class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500">
-                        <option value="all">ทุกวัน</option>
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-5 gap-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-navy-800">ตารางสอนรวมทั้งหมด</h2>
+                        <p class="text-navy-400 text-sm mt-0.5">แสดงตารางการจัดการเรียนการสอนของครูทุกท่าน</p>
+                    </div>
+                    <select id="filter-day" class="border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white text-navy-700 font-medium cursor-pointer min-w-[160px]">
+                        <option value="all">แสดงทุกวัน</option>
                         <option value="1">วันจันทร์</option>
                         <option value="2">วันอังคาร</option>
                         <option value="3">วันพุธ</option>
@@ -65,20 +328,20 @@
                         <option value="5">วันศุกร์</option>
                     </select>
                 </div>
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto rounded-lg border border-navy-100">
                     <table id="master-schedule-table">
                         <thead>
                             <tr>
-                                <th class="w-24">วัน</th>
-                                <th>คาบ 1<br><span class="font-normal text-xs text-slate-500">08.30-09.15</span></th>
-                                <th>คาบ 2<br><span class="font-normal text-xs text-slate-500">09.15-10.00</span></th>
-                                <th>คาบ 3<br><span class="font-normal text-xs text-slate-500">10.15-11.00</span></th>
-                                <th>คาบ 4<br><span class="font-normal text-xs text-slate-500">11.00-11.45</span></th>
-                                <th>คาบ 5<br><span class="font-normal text-xs text-slate-500">12.00-12.45</span></th>
-                                <th>คาบ 6<br><span class="font-normal text-xs text-slate-500">12.45-13.30</span></th>
-                                <th>คาบ 7<br><span class="font-normal text-xs text-slate-500">13.45-14.30</span></th>
-                                <th>คาบ 8<br><span class="font-normal text-xs text-slate-500">14.30-15.15</span></th>
-                                <th>กิจกรรม<br><span class="font-normal text-xs text-slate-500">15.15-16.30</span></th>
+                                <th class="w-24 text-center">วัน</th>
+                                <th class="text-center">คาบ 1<br><span class="font-normal text-xs text-navy-400">08.30–09.15</span></th>
+                                <th class="text-center">คาบ 2<br><span class="font-normal text-xs text-navy-400">09.15–10.00</span></th>
+                                <th class="text-center">คาบ 3<br><span class="font-normal text-xs text-navy-400">10.15–11.00</span></th>
+                                <th class="text-center">คาบ 4<br><span class="font-normal text-xs text-navy-400">11.00–11.45</span></th>
+                                <th class="text-center">คาบ 5<br><span class="font-normal text-xs text-navy-400">12.00–12.45</span></th>
+                                <th class="text-center">คาบ 6<br><span class="font-normal text-xs text-navy-400">12.45–13.30</span></th>
+                                <th class="text-center">คาบ 7<br><span class="font-normal text-xs text-navy-400">13.45–14.30</span></th>
+                                <th class="text-center">คาบ 8<br><span class="font-normal text-xs text-navy-400">14.30–15.15</span></th>
+                                <th class="text-center">กิจกรรม<br><span class="font-normal text-xs text-navy-400">15.15–16.30</span></th>
                             </tr>
                         </thead>
                         <tbody id="master-schedule-body">
@@ -90,11 +353,14 @@
 
             <!-- TAB 2: ค้นหา / แลกคาบ -->
             <section id="tab-find" class="tab-content">
-                <h2 class="text-xl font-semibold text-slate-800 mb-6">ค้นหาผู้แทนคาบสอน</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-slate-50 p-6 rounded border border-slate-200">
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-navy-800">ค้นหาผู้แทนคาบสอน</h2>
+                    <p class="text-navy-400 text-sm mt-0.5">ระบุวันและคาบเพื่อค้นหาครูที่ไม่มีภาระสอนในช่วงเวลาดังกล่าว</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 bg-navy-50/60 p-6 rounded-xl border border-navy-100">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">ระบุวัน</label>
-                        <select id="search-day" class="w-full border border-slate-300 rounded p-2 focus:outline-none focus:border-slate-500">
+                        <label class="block text-sm font-semibold text-navy-700 mb-2">ระบุวัน</label>
+                        <select id="search-day" class="w-full border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white text-navy-700 cursor-pointer">
                             <option value="1">วันจันทร์</option>
                             <option value="2">วันอังคาร</option>
                             <option value="3">วันพุธ</option>
@@ -103,75 +369,77 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-2">ระบุคาบเรียน</label>
-                        <select id="search-period" class="w-full border border-slate-300 rounded p-2 focus:outline-none focus:border-slate-500">
-                            <option value="1">คาบ 1 (08.30 - 09.15)</option>
-                            <option value="2">คาบ 2 (09.15 - 10.00)</option>
-                            <option value="3">คาบ 3 (10.15 - 11.00)</option>
-                            <option value="4">คาบ 4 (11.00 - 11.45)</option>
-                            <option value="5">คาบ 5 (12.00 - 12.45)</option>
-                            <option value="6">คาบ 6 (12.45 - 13.30)</option>
-                            <option value="7">คาบ 7 (13.45 - 14.30)</option>
-                            <option value="8">คาบ 8 (14.30 - 15.15)</option>
-                            <option value="9">คาบกิจกรรม (15.15 - 16.30)</option>
+                        <label class="block text-sm font-semibold text-navy-700 mb-2">ระบุคาบเรียน</label>
+                        <select id="search-period" class="w-full border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white text-navy-700 cursor-pointer">
+                            <option value="1">คาบ 1 (08.30 – 09.15)</option>
+                            <option value="2">คาบ 2 (09.15 – 10.00)</option>
+                            <option value="3">คาบ 3 (10.15 – 11.00)</option>
+                            <option value="4">คาบ 4 (11.00 – 11.45)</option>
+                            <option value="5">คาบ 5 (12.00 – 12.45)</option>
+                            <option value="6">คาบ 6 (12.45 – 13.30)</option>
+                            <option value="7">คาบ 7 (13.45 – 14.30)</option>
+                            <option value="8">คาบ 8 (14.30 – 15.15)</option>
+                            <option value="9">คาบกิจกรรม (15.15 – 16.30)</option>
                         </select>
                     </div>
                     <div class="flex items-end">
-                        <button id="btn-search-sub" class="w-full px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700 transition">ค้นหาครูที่ว่าง</button>
+                        <button id="btn-search-sub" class="btn-primary w-full px-4 py-2.5 rounded-lg font-semibold text-sm">ค้นหาครูที่ว่าง</button>
                     </div>
                 </div>
 
                 <div class="mt-8">
-                    <h3 class="text-lg font-medium text-slate-800 mb-4 border-b pb-2">ผลการค้นหา: ครูที่ไม่มีภาระสอนในคาบดังกล่าว</h3>
-                    <div id="search-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <!-- Injected via JS -->
-                        <div class="text-slate-500 text-sm">กรุณากดค้นหา</div>
+                    <h3 class="text-base font-bold text-navy-700 mb-4 pb-3 border-b border-navy-100">ผลการค้นหา: ครูที่ไม่มีภาระสอนในคาบดังกล่าว</h3>
+                    <div id="search-results" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                        <div class="text-navy-400 text-sm col-span-full py-4 text-center">กรุณาเลือกวันและคาบ แล้วกดค้นหา</div>
                     </div>
                 </div>
             </section>
 
             <!-- TAB 3: Admin -->
             <section id="tab-admin" class="tab-content admin-only">
-                <h2 class="text-xl font-semibold text-slate-800 mb-6">จัดการระบบ (สิทธิ์ผู้ดูแล)</h2>
-                
-                <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-navy-800">จัดการระบบ</h2>
+                    <p class="text-navy-400 text-sm mt-0.5">เพิ่ม ลบ และจัดการข้อมูลครูผู้สอน รายวิชา และตารางสอน</p>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <!-- Manage Teachers -->
-                    <div class="border border-slate-200 rounded p-6">
-                        <h3 class="text-lg font-medium text-slate-800 mb-4">จัดการรายชื่อครู</h3>
+                    <div class="border border-navy-100 rounded-xl p-6 bg-white">
+                        <h3 class="text-base font-bold text-navy-800 mb-4">จัดการรายชื่อครู</h3>
                         <form id="form-teacher" class="flex gap-2 mb-4">
-                            <input type="text" id="input-teacher-name" placeholder="ชื่อ-สกุล ครูผู้สอน" class="flex-1 border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500" required>
-                            <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded text-sm hover:bg-slate-700">เพิ่ม</button>
+                            <input type="text" id="input-teacher-name" placeholder="ชื่อ-สกุล ครูผู้สอน" class="flex-1 border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white" required>
+                            <button type="submit" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold">เพิ่ม</button>
                         </form>
                         <ul id="admin-teacher-list" class="space-y-2 max-h-64 overflow-y-auto"></ul>
                     </div>
 
                     <!-- Manage Subjects -->
-                    <div class="border border-slate-200 rounded p-6">
-                        <h3 class="text-lg font-medium text-slate-800 mb-4">จัดการรายวิชา</h3>
+                    <div class="border border-navy-100 rounded-xl p-6 bg-white">
+                        <h3 class="text-base font-bold text-navy-800 mb-4">จัดการรายวิชา</h3>
                         <form id="form-subject" class="flex flex-col gap-2 mb-4">
-                            <input type="text" id="input-subject-code" placeholder="รหัสวิชา (เช่น ง31101)" class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500" required>
-                            <input type="text" id="input-subject-name" placeholder="ชื่อวิชา (เช่น การงานอาชีพ 1)" class="border border-slate-300 rounded p-2 text-sm focus:outline-none focus:border-slate-500" required>
-                            <button type="submit" class="px-4 py-2 bg-slate-800 text-white rounded text-sm hover:bg-slate-700 self-end">เพิ่ม</button>
+                            <input type="text" id="input-subject-code" placeholder="รหัสวิชา (เช่น ง31101)" class="border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white" required>
+                            <input type="text" id="input-subject-name" placeholder="ชื่อวิชา (เช่น การงานอาชีพ 1)" class="border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white" required>
+                            <button type="submit" class="btn-primary px-5 py-2.5 rounded-lg text-sm font-semibold self-end">เพิ่ม</button>
                         </form>
                         <ul id="admin-subject-list" class="space-y-2 max-h-48 overflow-y-auto"></ul>
                     </div>
                 </div>
 
                 <!-- Manage Schedules -->
-                <div class="mt-8 border border-slate-200 rounded p-6">
-                    <h3 class="text-lg font-medium text-slate-800 mb-4">จัดตารางสอน</h3>
+                <div class="mt-6 border border-navy-100 rounded-xl p-6 bg-white">
+                    <h3 class="text-base font-bold text-navy-800 mb-4">จัดตารางสอน</h3>
                     <form id="form-schedule" class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6 items-end">
                         <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">ครูผู้สอน</label>
-                            <select id="sel-sch-teacher" class="w-full border border-slate-300 rounded p-2 text-sm" required></select>
+                            <label class="block text-xs font-semibold text-navy-600 mb-1.5">ครูผู้สอน</label>
+                            <select id="sel-sch-teacher" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer" required></select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">รายวิชา</label>
-                            <select id="sel-sch-subject" class="w-full border border-slate-300 rounded p-2 text-sm" required></select>
+                            <label class="block text-xs font-semibold text-navy-600 mb-1.5">รายวิชา</label>
+                            <select id="sel-sch-subject" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer" required></select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">วัน</label>
-                            <select id="sel-sch-day" class="w-full border border-slate-300 rounded p-2 text-sm" required>
+                            <label class="block text-xs font-semibold text-navy-600 mb-1.5">วัน</label>
+                            <select id="sel-sch-day" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer" required>
                                 <option value="1">จันทร์</option>
                                 <option value="2">อังคาร</option>
                                 <option value="3">พุธ</option>
@@ -180,8 +448,8 @@
                             </select>
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-slate-700 mb-1">คาบเรียน</label>
-                            <select id="sel-sch-period" class="w-full border border-slate-300 rounded p-2 text-sm" required>
+                            <label class="block text-xs font-semibold text-navy-600 mb-1.5">คาบเรียน</label>
+                            <select id="sel-sch-period" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer" required>
                                 <option value="1">1 (08.30)</option><option value="2">2 (09.15)</option>
                                 <option value="3">3 (10.15)</option><option value="4">4 (11.00)</option>
                                 <option value="5">5 (12.00)</option><option value="6">6 (12.45)</option>
@@ -189,11 +457,11 @@
                                 <option value="9">กิจกรรม (15.15)</option>
                             </select>
                         </div>
-                        <button type="submit" class="w-full px-4 py-2 bg-slate-800 text-white rounded text-sm hover:bg-slate-700">บันทึกคาบสอน</button>
+                        <button type="submit" class="btn-primary w-full px-4 py-2.5 rounded-lg text-sm font-semibold">บันทึกคาบสอน</button>
                     </form>
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto rounded-lg border border-navy-100">
                         <table class="w-full text-sm text-left">
-                            <thead class="bg-slate-50">
+                            <thead>
                                 <tr>
                                     <th>ครูผู้สอน</th>
                                     <th>วิชา</th>
@@ -210,13 +478,18 @@
         </div>
     </main>
 
+    <!-- Footer -->
+    <footer class="w-full max-w-6xl text-center py-6 mt-6">
+        <p class="text-navy-300 text-xs">ระบบตรวจสอบและแลกคาบสอน &mdash; กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี</p>
+    </footer>
+
     <!-- Custom Modal for Alerts -->
-    <div id="msg-modal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 items-center justify-center">
-        <div class="bg-white rounded-lg shadow-lg p-6 w-96 max-w-full">
-            <h3 id="modal-title" class="text-lg font-bold text-slate-800 mb-2">แจ้งเตือน</h3>
-            <p id="modal-message" class="text-slate-600 mb-6"></p>
+    <div id="msg-modal" class="fixed inset-0 z-50 items-center justify-center p-4" style="backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); background: rgba(17,27,46,0.45);">
+        <div class="bg-white rounded-xl shadow-2xl p-7 w-[420px] max-w-full fade-in" style="box-shadow: 0 8px 32px rgba(17,27,46,0.18);">
+            <h3 id="modal-title" class="text-lg font-bold text-navy-800 mb-2">แจ้งเตือน</h3>
+            <p id="modal-message" class="text-navy-500 mb-6 text-sm leading-relaxed"></p>
             <div class="flex justify-end">
-                <button id="modal-close" class="px-4 py-2 bg-slate-800 text-white rounded hover:bg-slate-700">ตกลง</button>
+                <button id="modal-close" class="btn-primary px-6 py-2.5 rounded-lg font-semibold text-sm">ตกลง</button>
             </div>
         </div>
     </div>
@@ -227,32 +500,31 @@
         import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, onSnapshot, addDoc, deleteDoc, doc, query } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Configuration setup - handles both Canvas preview and real-world deployment fallback
+        // Configuration setup
         const isCanvasEnv = typeof __app_id !== 'undefined';
         const configStr = typeof __firebase_config !== 'undefined' ? __firebase_config : null;
-        
-        // ใช้ Config ของผู้ใช้ที่ให้มา
+
         const userConfig = {
-            apiKey: "AIzaSyCre8lhtriuzJjlRPOByh4bobKe7eiYV4Q", // หมายเหตุ: API key ถูก override เป็น empty ใน Canvas environment
+            apiKey: "AIzaSyCre8lhtriuzJjlRPOByh4bobKe7eiYV4Q",
             authDomain: "teaching-schedule-e3f1c.firebaseapp.com",
             projectId: "teaching-schedule-e3f1c",
             storageBucket: "teaching-schedule-e3f1c.firebasestorage.app",
             messagingSenderId: "536466481199",
             appId: "1:536466481199:web:7d4aef7f3f4d242569a6da"
         };
-        
+
         const firebaseConfig = configStr ? JSON.parse(configStr) : userConfig;
-        
+
         // Initialize Firebase
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
-        
+
         const appId = isCanvasEnv ? __app_id : 'teaching-schedule-e3f1c';
-        
+
         // Data Structure Paths
         const getCollectionPath = (colName) => isCanvasEnv ? `artifacts/${appId}/public/data/${colName}` : colName;
-        
+
         // State
         let teachers = [];
         let subjects = [];
@@ -271,14 +543,27 @@
         document.getElementById('modal-close').addEventListener('click', () => {
             document.getElementById('msg-modal').classList.remove('active');
         });
+        // Close modal on backdrop click
+        document.getElementById('msg-modal').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                document.getElementById('msg-modal').classList.remove('active');
+            }
+        });
 
         // Tab Navigation
         document.querySelectorAll('.tab-btn').forEach(btn => {
             btn.addEventListener('click', (e) => {
+                // Prevent clicks on hidden admin tab
+                const target = e.target.closest('.tab-btn');
+                if (!target) return;
+
                 document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                e.target.classList.add('active');
-                document.getElementById(e.target.dataset.target).classList.add('active');
+                target.classList.add('active');
+                const tabEl = document.getElementById(target.dataset.target);
+                if (tabEl) {
+                    tabEl.classList.add('active');
+                }
             });
         });
 
@@ -300,8 +585,8 @@
             try {
                 await signInWithPopup(auth, provider);
             } catch (error) {
-                if(error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') {
-                    showModal('ไม่สามารถเข้าสู่ระบบได้', 'Popup ถูกบล็อก กรุณาตรวจสอบการตั้งค่าเบราว์เซอร์ (หากใช้งานใน Canvas ให้คลิกขวาเปิดในแท็บใหม่)');
+                if (error.code === 'auth/popup-closed-by-user' || error.code === 'auth/popup-blocked') {
+                    showModal('ไม่สามารถเข้าสู่ระบบได้', 'Popup ถูกบล็อก กรุณาตรวจสอบการตั้งค่าเบราว์เซอร์ หรือลองเปิดหน้านี้ในแท็บใหม่');
                 } else {
                     showModal('ข้อผิดพลาด', error.message);
                 }
@@ -319,19 +604,27 @@
             if (user && user.email === ADMIN_EMAIL) {
                 document.getElementById('btn-login').classList.add('hidden');
                 document.getElementById('btn-logout').classList.remove('hidden');
-                document.getElementById('user-info').innerText = `Admin: ${user.email}`;
+                document.getElementById('user-info').innerText = `ผู้ดูแล: ${user.email}`;
                 document.getElementById('user-info').classList.remove('hidden');
-                document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'block');
+                // FIX: Use inline-flex for tab button (flex child), block for tab section
+                document.querySelectorAll('.admin-only').forEach(el => {
+                    if (el.tagName === 'BUTTON') {
+                        el.style.display = 'inline-flex';
+                    } else {
+                        el.style.display = 'block';
+                    }
+                });
             } else {
-                // Anonymous user or non-admin Google user
                 document.getElementById('btn-login').classList.remove('hidden');
                 document.getElementById('btn-logout').classList.add('hidden');
                 document.getElementById('user-info').classList.add('hidden');
                 document.querySelectorAll('.admin-only').forEach(el => el.style.display = 'none');
-                
+
                 // Switch back to tab-schedule if admin tab is active
-                if(document.getElementById('tab-admin').classList.contains('active')) {
-                    document.querySelector('[data-target="tab-schedule"]').click();
+                const adminTab = document.getElementById('tab-admin');
+                if (adminTab && adminTab.classList.contains('active')) {
+                    const scheduleBtn = document.querySelector('[data-target="tab-schedule"]');
+                    if (scheduleBtn) scheduleBtn.click();
                 }
             }
             if (user) {
@@ -345,11 +638,11 @@
         // Data Fetching
         let unsubTeachers, unsubSubjects, unsubSchedules;
         const fetchData = () => {
-            if(!currentUser) return;
-            
-            if(unsubTeachers) unsubTeachers();
-            if(unsubSubjects) unsubSubjects();
-            if(unsubSchedules) unsubSchedules();
+            if (!currentUser) return;
+
+            if (unsubTeachers) unsubTeachers();
+            if (unsubSubjects) unsubSubjects();
+            if (unsubSchedules) unsubSchedules();
 
             try {
                 unsubTeachers = onSnapshot(collection(db, getCollectionPath('teachers')), (snapshot) => {
@@ -371,7 +664,7 @@
                     renderScheduleAdmin();
                     renderMasterSchedule();
                 }, (err) => console.error("Error fetching schedules:", err));
-            } catch(e) {
+            } catch (e) {
                 console.error("Firestore Rules might be blocking:", e);
                 showModal("ข้อผิดพลาดฐานข้อมูล", "ไม่สามารถอ่านข้อมูลได้ กรุณาตรวจสอบ Firestore Rules");
             }
@@ -380,17 +673,21 @@
         // Render Functions
         const renderTeacherAdmin = () => {
             const list = document.getElementById('admin-teacher-list');
+            if (teachers.length === 0) {
+                list.innerHTML = '<li class="text-navy-400 text-sm py-2 text-center">ยังไม่มีข้อมูลครูผู้สอน</li>';
+                return;
+            }
             list.innerHTML = teachers.map(t => `
-                <li class="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded">
-                    <span class="text-sm font-medium text-slate-700">${t.name}</span>
-                    <button class="text-red-500 hover:text-red-700 text-sm font-medium delete-teacher" data-id="${t.id}">ลบ</button>
+                <li class="flex justify-between items-center bg-navy-50/50 border border-navy-100 p-3 rounded-lg">
+                    <span class="text-sm font-medium text-navy-700">${t.name}</span>
+                    <button class="btn-delete delete-teacher" data-id="${t.id}">ลบ</button>
                 </li>
             `).join('');
-            
+
             document.querySelectorAll('.delete-teacher').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const id = e.target.dataset.id;
-                    if(schedules.some(s => s.teacherId === id)) {
+                    if (schedules.some(s => s.teacherId === id)) {
                         showModal('ลบไม่ได้', 'ครูท่านนี้มีตารางสอนอยู่ กรุณาลบตารางสอนก่อน');
                         return;
                     }
@@ -401,17 +698,21 @@
 
         const renderSubjectAdmin = () => {
             const list = document.getElementById('admin-subject-list');
+            if (subjects.length === 0) {
+                list.innerHTML = '<li class="text-navy-400 text-sm py-2 text-center">ยังไม่มีข้อมูลรายวิชา</li>';
+                return;
+            }
             list.innerHTML = subjects.map(s => `
-                <li class="flex justify-between items-center bg-slate-50 border border-slate-200 p-3 rounded">
-                    <span class="text-sm font-medium text-slate-700">${s.code} - ${s.name}</span>
-                    <button class="text-red-500 hover:text-red-700 text-sm font-medium delete-subject" data-id="${s.id}">ลบ</button>
+                <li class="flex justify-between items-center bg-navy-50/50 border border-navy-100 p-3 rounded-lg">
+                    <span class="text-sm font-medium text-navy-700">${s.code} – ${s.name}</span>
+                    <button class="btn-delete delete-subject" data-id="${s.id}">ลบ</button>
                 </li>
             `).join('');
 
             document.querySelectorAll('.delete-subject').forEach(btn => {
                 btn.addEventListener('click', async (e) => {
                     const id = e.target.dataset.id;
-                    if(schedules.some(s => s.subjectId === id)) {
+                    if (schedules.some(s => s.subjectId === id)) {
                         showModal('ลบไม่ได้', 'วิชานี้มีตารางสอนอยู่ กรุณาลบตารางสอนก่อน');
                         return;
                     }
@@ -422,34 +723,41 @@
 
         const updateSelectOptions = () => {
             const tSelect = document.getElementById('sel-sch-teacher');
-            tSelect.innerHTML = `<option value="">-- เลือกครูผู้สอน --</option>` + 
+            tSelect.innerHTML = `<option value="">— เลือกครูผู้สอน —</option>` +
                 teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
-            
+
             const sSelect = document.getElementById('sel-sch-subject');
-            sSelect.innerHTML = `<option value="">-- เลือกวิชา --</option>` + 
+            sSelect.innerHTML = `<option value="">— เลือกวิชา —</option>` +
                 subjects.map(s => `<option value="${s.id}">${s.code} ${s.name}</option>`).join('');
         };
 
         const renderScheduleAdmin = () => {
             const list = document.getElementById('admin-schedule-list');
-            
+
             // Sort schedules by Day -> Period
             const sorted = [...schedules].sort((a, b) => {
-                if(a.day !== b.day) return a.day - b.day;
-                return a.period - b.period;
+                const dayA = parseInt(a.day), dayB = parseInt(b.day);
+                if (dayA !== dayB) return dayA - dayB;
+                return parseInt(a.period) - parseInt(b.period);
             });
+
+            if (sorted.length === 0) {
+                list.innerHTML = '<tr><td colspan="5" class="text-center text-navy-400 py-6 text-sm">ยังไม่มีตารางสอน</td></tr>';
+                return;
+            }
 
             list.innerHTML = sorted.map(sch => {
                 const t = teachers.find(x => x.id === sch.teacherId);
                 const s = subjects.find(x => x.id === sch.subjectId);
+                const periodNum = parseInt(sch.period);
                 return `
-                    <tr class="border-b border-slate-200 hover:bg-slate-50">
-                        <td class="p-3">${t ? t.name : 'Unknown'}</td>
-                        <td class="p-3">${s ? s.code : 'Unknown'}</td>
-                        <td class="p-3">${dayNames[sch.day]}</td>
-                        <td class="p-3">${sch.period == 9 ? 'กิจกรรม' : sch.period}</td>
+                    <tr class="border-b border-navy-100 hover:bg-navy-50/50 transition-colors">
+                        <td class="p-3">${t ? t.name : '(ไม่พบข้อมูล)'}</td>
+                        <td class="p-3">${s ? s.code + ' ' + s.name : '(ไม่พบข้อมูล)'}</td>
+                        <td class="p-3">${dayNames[parseInt(sch.day)] || '—'}</td>
+                        <td class="p-3">${periodNum === 9 ? 'กิจกรรม' : periodNum}</td>
                         <td class="p-3 text-center">
-                            <button class="text-red-500 hover:text-red-700 delete-schedule" data-id="${sch.id}">ลบ</button>
+                            <button class="btn-delete delete-schedule" data-id="${sch.id}">ลบ</button>
                         </td>
                     </tr>
                 `;
@@ -465,32 +773,37 @@
         const renderMasterSchedule = () => {
             const tbody = document.getElementById('master-schedule-body');
             const filterDay = document.getElementById('filter-day').value;
-            
+
             let html = '';
-            for(let d = 1; d <= 5; d++) {
-                if(filterDay !== 'all' && parseInt(filterDay) !== d) continue;
-                
-                let row = `<tr><td class="font-semibold bg-slate-50 text-slate-700">${dayNames[d]}</td>`;
-                for(let p = 1; p <= 9; p++) {
+            for (let d = 1; d <= 5; d++) {
+                if (filterDay !== 'all' && parseInt(filterDay) !== d) continue;
+
+                let row = `<tr><td class="font-semibold text-center text-navy-700" style="background: linear-gradient(180deg, #f8f9fc, #f0f3f8);">${dayNames[d]}</td>`;
+                for (let p = 1; p <= 9; p++) {
+                    // FIX: Use parseInt for consistent comparison regardless of stored type
                     const classInSlot = schedules.filter(s => parseInt(s.day) === d && parseInt(s.period) === p);
-                    
-                    if(classInSlot.length > 0) {
+
+                    if (classInSlot.length > 0) {
                         let cellContent = classInSlot.map(sch => {
                             const t = teachers.find(x => x.id === sch.teacherId);
                             const s = subjects.find(x => x.id === sch.subjectId);
-                            if(!t || !s) return '';
-                            return `<div class="mb-2 last:mb-0 pb-2 border-b last:border-0 border-slate-100">
-                                <div class="font-medium text-slate-800">${s.code}</div>
-                                <div class="text-slate-600 text-xs">${t.name}</div>
+                            if (!t || !s) return '';
+                            return `<div class="schedule-cell-content">
+                                <div class="subject-code">${s.code}</div>
+                                <div class="teacher-name">${t.name}</div>
                             </div>`;
                         }).join('');
-                        row += `<td class="align-top border border-slate-200 min-w-[120px] bg-white">${cellContent}</td>`;
+                        row += `<td class="schedule-cell bg-white">${cellContent}</td>`;
                     } else {
-                        row += `<td class="bg-slate-50"></td>`;
+                        row += `<td class="empty-cell"></td>`;
                     }
                 }
                 row += `</tr>`;
                 html += row;
+            }
+
+            if (html === '') {
+                html = '<tr><td colspan="10" class="text-center text-navy-400 py-8 text-sm">ยังไม่มีข้อมูลตารางสอน</td></tr>';
             }
             tbody.innerHTML = html;
         };
@@ -498,33 +811,62 @@
         // Form Submit Listeners
         document.getElementById('form-teacher').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(!currentUser || currentUser.email !== ADMIN_EMAIL) return;
-            const name = document.getElementById('input-teacher-name').value;
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            const nameInput = document.getElementById('input-teacher-name');
+            const name = nameInput.value.trim();
+            if (!name) {
+                showModal('ข้อมูลไม่ครบ', 'กรุณากรอกชื่อ-สกุล ครูผู้สอน');
+                return;
+            }
+            // Check for duplicate teacher name
+            if (teachers.some(t => t.name === name)) {
+                showModal('ข้อมูลซ้ำ', `มีครูชื่อ "${name}" อยู่ในระบบแล้ว`);
+                return;
+            }
             await addDoc(collection(db, getCollectionPath('teachers')), { name });
             document.getElementById('form-teacher').reset();
         });
 
         document.getElementById('form-subject').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(!currentUser || currentUser.email !== ADMIN_EMAIL) return;
-            const code = document.getElementById('input-subject-code').value;
-            const name = document.getElementById('input-subject-name').value;
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            const code = document.getElementById('input-subject-code').value.trim();
+            const name = document.getElementById('input-subject-name').value.trim();
+            if (!code || !name) {
+                showModal('ข้อมูลไม่ครบ', 'กรุณากรอกรหัสวิชาและชื่อวิชา');
+                return;
+            }
+            // Check for duplicate subject code
+            if (subjects.some(s => s.code === code)) {
+                showModal('ข้อมูลซ้ำ', `มีวิชารหัส "${code}" อยู่ในระบบแล้ว`);
+                return;
+            }
             await addDoc(collection(db, getCollectionPath('subjects')), { code, name });
             document.getElementById('form-subject').reset();
         });
 
         document.getElementById('form-schedule').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if(!currentUser || currentUser.email !== ADMIN_EMAIL) return;
-            
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+
             const teacherId = document.getElementById('sel-sch-teacher').value;
             const subjectId = document.getElementById('sel-sch-subject').value;
             const day = parseInt(document.getElementById('sel-sch-day').value);
             const period = parseInt(document.getElementById('sel-sch-period').value);
 
-            // Check if teacher is already teaching at this time
-            const conflict = schedules.find(s => s.teacherId === teacherId && s.day === day && s.period === period);
-            if(conflict) {
+            // Validate selections
+            if (!teacherId || !subjectId) {
+                showModal('ข้อมูลไม่ครบ', 'กรุณาเลือกครูผู้สอนและรายวิชา');
+                return;
+            }
+
+            // FIX: Use parseInt for consistent comparison
+            const conflict = schedules.find(s =>
+                s.teacherId === teacherId &&
+                parseInt(s.day) === day &&
+                parseInt(s.period) === period
+            );
+            if (conflict) {
                 showModal('เวลาซ้อนทับ', 'ครูท่านนี้มีตารางสอนในวันและคาบดังกล่าวแล้ว');
                 return;
             }
@@ -533,7 +875,7 @@
                 teacherId, subjectId, day, period
             });
             document.getElementById('form-schedule').reset();
-            // restore day dropdown mapping
+            // Restore day dropdown to the last selected value
             document.getElementById('sel-sch-day').value = day;
         });
 
@@ -544,23 +886,28 @@
         document.getElementById('btn-search-sub').addEventListener('click', () => {
             const day = parseInt(document.getElementById('search-day').value);
             const period = parseInt(document.getElementById('search-period').value);
-            
-            // Find teacher IDs who are teaching at this time
+
+            // FIX: Use parseInt for consistent comparison
             const busyTeacherIds = schedules
-                .filter(s => s.day === day && s.period === period)
+                .filter(s => parseInt(s.day) === day && parseInt(s.period) === period)
                 .map(s => s.teacherId);
-            
-            // Filter available teachers
+
             const availableTeachers = teachers.filter(t => !busyTeacherIds.includes(t.id));
-            
+
             const resultsContainer = document.getElementById('search-results');
-            if(availableTeachers.length === 0) {
-                resultsContainer.innerHTML = `<div class="col-span-full text-slate-500 bg-slate-100 p-4 rounded text-center">ไม่มีครูที่ว่างในคาบนี้</div>`;
+            const periodLabel = period === 9 ? 'คาบกิจกรรม' : `คาบที่ ${period}`;
+            const dayLabel = dayNames[day];
+
+            if (teachers.length === 0) {
+                resultsContainer.innerHTML = `<div class="col-span-full text-navy-400 bg-navy-50 p-5 rounded-lg text-center text-sm">ยังไม่มีข้อมูลครูในระบบ</div>`;
+            } else if (availableTeachers.length === 0) {
+                resultsContainer.innerHTML = `<div class="col-span-full text-navy-400 bg-navy-50 p-5 rounded-lg text-center text-sm">ไม่มีครูที่ว่างในวัน${dayLabel} ${periodLabel}</div>`;
             } else {
-                resultsContainer.innerHTML = availableTeachers.map(t => `
-                    <div class="border border-slate-200 bg-white p-4 rounded flex items-center gap-3">
-                        <div class="w-2 h-2 bg-green-500 rounded-full"></div>
-                        <span class="font-medium text-slate-800">${t.name}</span>
+                resultsContainer.innerHTML = `<div class="col-span-full text-navy-400 text-xs mb-1">พบครูที่ว่าง ${availableTeachers.length} ท่าน — วัน${dayLabel} ${periodLabel}</div>` +
+                    availableTeachers.map(t => `
+                    <div class="result-card">
+                        <div class="status-dot"></div>
+                        <span class="font-medium text-navy-800 text-sm">${t.name}</span>
                     </div>
                 `).join('');
             }
