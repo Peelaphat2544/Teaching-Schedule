@@ -283,7 +283,7 @@
         <div class="flex flex-col md:flex-row justify-between items-center p-6">
             <div class="flex items-center gap-5">
                 <img src="School badge.png"
-                     alt="ตราโรงเรียน มอ.วิทยานุสรณ์"
+                     alt="ตราโรงเรียนภูเก็ตวิทยาลัย"
                      class="flex-shrink-0"
                      style="width: 2.8cm; height: auto; object-fit: contain;"
                      onerror="this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'106\' height=\'106\' viewBox=\'0 0 106 106\'><rect width=\'106\' height=\'106\' rx=\'12\' fill=\'%23f0f3f8\'/><text x=\'50%\' y=\'50%\' font-family=\'sans-serif\' font-size=\'11\' text-anchor=\'middle\' dy=\'.3em\' fill=\'%234d6a9a\'>[ตราโรงเรียน]</text></svg>'">
@@ -478,9 +478,9 @@
         </div>
     </main>
 
-    <!-- Footer -->
     <footer class="w-full max-w-6xl text-center py-6 mt-6">
-        <p class="text-navy-300 text-xs">ระบบตรวจสอบและแลกคาบสอน &mdash; กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี</p>
+        <p class="text-navy-300 text-xs mb-1">ระบบตรวจสอบและแลกคาบสอน &mdash; กลุ่มสาระการเรียนรู้การงานอาชีพและเทคโนโลยี</p>
+        <p class="text-navy-300 text-xs">ผู้สร้าง: นายพีลพัทร์ แก้วคง</p>
     </footer>
 
     <!-- Custom Modal for Alerts -->
@@ -577,6 +577,8 @@
                 }
             } catch (err) {
                 console.error("Auth init error:", err);
+                // Auth failed - still try to fetch data (Firestore rules might allow public reads)
+                fetchData();
             }
         };
 
@@ -627,9 +629,9 @@
                     if (scheduleBtn) scheduleBtn.click();
                 }
             }
-            if (user) {
-                fetchData();
-            }
+            // Re-fetch data when auth state changes (e.g. login/logout)
+            dataLoaded = false;
+            fetchData();
         });
 
         // Initialize App
@@ -637,8 +639,27 @@
 
         // Data Fetching
         let unsubTeachers, unsubSubjects, unsubSchedules;
+        let dataLoaded = false;
+
+        const handleFirestoreError = (collectionName, err) => {
+            console.error(`Error fetching ${collectionName}:`, err);
+            if (err.code === 'permission-denied') {
+                showModal('ไม่สามารถอ่านข้อมูลได้',
+                    'สิทธิ์การเข้าถึงฐานข้อมูลถูกจำกัด\n\n' +
+                    'สาเหตุที่เป็นไปได้:\n' +
+                    '• Firestore Security Rules ไม่อนุญาตให้อ่าน\n' +
+                    '• Anonymous Authentication ยังไม่เปิดใช้งานใน Firebase Console\n\n' +
+                    'กรุณาตรวจสอบ Firebase Console > Authentication > Sign-in method > Anonymous');
+            } else if (err.code === 'unavailable' || err.code === 'failed-precondition') {
+                showModal('ไม่สามารถเชื่อมต่อฐานข้อมูลได้',
+                    'กรุณาตรวจสอบการเชื่อมต่ออินเทอร์เน็ต แล้วลองใหม่อีกครั้ง');
+            }
+        };
+
         const fetchData = () => {
-            if (!currentUser) return;
+            // Prevent duplicate listeners
+            if (dataLoaded) return;
+            dataLoaded = true;
 
             if (unsubTeachers) unsubTeachers();
             if (unsubSubjects) unsubSubjects();
@@ -647,26 +668,30 @@
             try {
                 unsubTeachers = onSnapshot(collection(db, getCollectionPath('teachers')), (snapshot) => {
                     teachers = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    console.log(`Loaded ${teachers.length} teachers from path: ${getCollectionPath('teachers')}`);
                     renderTeacherAdmin();
                     updateSelectOptions();
                     renderMasterSchedule();
-                }, (err) => console.error("Error fetching teachers:", err));
+                }, (err) => handleFirestoreError('teachers', err));
 
                 unsubSubjects = onSnapshot(collection(db, getCollectionPath('subjects')), (snapshot) => {
                     subjects = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    console.log(`Loaded ${subjects.length} subjects from path: ${getCollectionPath('subjects')}`);
                     renderSubjectAdmin();
                     updateSelectOptions();
                     renderMasterSchedule();
-                }, (err) => console.error("Error fetching subjects:", err));
+                }, (err) => handleFirestoreError('subjects', err));
 
                 unsubSchedules = onSnapshot(collection(db, getCollectionPath('schedules')), (snapshot) => {
                     schedules = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    console.log(`Loaded ${schedules.length} schedules from path: ${getCollectionPath('schedules')}`);
                     renderScheduleAdmin();
                     renderMasterSchedule();
-                }, (err) => console.error("Error fetching schedules:", err));
+                }, (err) => handleFirestoreError('schedules', err));
             } catch (e) {
-                console.error("Firestore Rules might be blocking:", e);
-                showModal("ข้อผิดพลาดฐานข้อมูล", "ไม่สามารถอ่านข้อมูลได้ กรุณาตรวจสอบ Firestore Rules");
+                console.error("Firestore setup error:", e);
+                showModal('ข้อผิดพลาดฐานข้อมูล',
+                    'ไม่สามารถเชื่อมต่อ Firestore ได้ กรุณาตรวจสอบการตั้งค่า Firebase');
             }
         };
 
@@ -811,7 +836,10 @@
         // Form Submit Listeners
         document.getElementById('form-teacher').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+                showModal('ไม่มีสิทธิ์', 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบเพื่อทำรายการนี้');
+                return;
+            }
             const nameInput = document.getElementById('input-teacher-name');
             const name = nameInput.value.trim();
             if (!name) {
@@ -829,7 +857,10 @@
 
         document.getElementById('form-subject').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+                showModal('ไม่มีสิทธิ์', 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบเพื่อทำรายการนี้');
+                return;
+            }
             const code = document.getElementById('input-subject-code').value.trim();
             const name = document.getElementById('input-subject-name').value.trim();
             if (!code || !name) {
@@ -847,7 +878,10 @@
 
         document.getElementById('form-schedule').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser || currentUser.email !== ADMIN_EMAIL) return;
+            if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
+                showModal('ไม่มีสิทธิ์', 'กรุณาเข้าสู่ระบบด้วยบัญชีผู้ดูแลระบบเพื่อทำรายการนี้');
+                return;
+            }
 
             const teacherId = document.getElementById('sel-sch-teacher').value;
             const subjectId = document.getElementById('sel-sch-subject').value;
