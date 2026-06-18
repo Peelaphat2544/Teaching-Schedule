@@ -1,0 +1,2531 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AR Algorithm Adventure - เกมผจญภัยอัลกอริทึม ม.1</title>
+    <meta name="description" content="เกมเรียนรู้อัลกอริทึมด้วย AR สำหรับนักเรียน ม.1 ท้าทายและสนุก" />
+    <meta name="author" content="PEELAPHAT KAEWKONG" />
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;600;700;900&family=Orbitron:wght@700;900&display=swap" rel="stylesheet" />
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            overflow: hidden;
+            background: #0a0a1a;
+            font-family: 'Kanit', sans-serif;
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+        video {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            opacity: 0;
+            pointer-events: none;
+        }
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        /* ===== SPLASH SCREEN ===== */
+        #splash-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 40px 20px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+        }
+        #splash-screen .title-glow {
+            font-family: 'Orbitron', sans-serif;
+            font-size: clamp(2rem, 5vw, 4rem);
+            font-weight: 900;
+            text-align: center;
+            background: linear-gradient(90deg, #00f2fe, #4facfe, #f77062, #fe5196);
+            background-size: 300% 300%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 3s ease infinite;
+            filter: drop-shadow(0 0 30px rgba(79, 172, 254, 0.5));
+        }
+        @keyframes gradientShift {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+        #splash-screen .subtitle {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2rem;
+            margin-top: 10px;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        #splash-screen .robot-splash {
+            font-size: 6rem;
+            margin: 30px 0;
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes float {
+            0%,
+            100% {
+                transform: translateY(0) rotate(-5deg);
+            }
+            50% {
+                transform: translateY(-20px) rotate(5deg);
+            }
+        }
+        .start-btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .start-btn {
+            padding: 16px 50px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            transition: all 0.3s ease;
+            letter-spacing: 2px;
+        }
+        .start-btn:hover {
+            transform: scale(1.08);
+        }
+        .start-btn:active {
+            transform: scale(0.95);
+        }
+        #start-btn-mouse {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            box-shadow: 0 0 30px rgba(79, 172, 254, 0.4);
+        }
+        #start-btn-ar {
+            background: linear-gradient(135deg, #f77062, #fe5196);
+            box-shadow: 0 0 30px rgba(254, 81, 150, 0.4);
+            font-size: 1.1rem;
+            padding: 14px 40px;
+        }
+        .creator-credit {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.75rem;
+            margin-top: 25px;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .creator-credit span {
+            color: #4facfe;
+            font-weight: 600;
+        }
+
+        /* ===== HUD OVERLAY ===== */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 10;
+            display: none;
+            pointer-events: none;
+        }
+        #hud-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 12px 15px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .hud-card {
+            background: rgba(10, 10, 30, 0.85);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 10px 14px;
+            pointer-events: auto;
+        }
+        .hud-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            color: rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+            margin-bottom: 4px;
+        }
+        #level-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00f2fe, #4facfe);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        #mission-text {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+
+        /* HP Bar */
+        #hp-section {
+            text-align: center;
+            min-width: 180px;
+        }
+        #hp-bar-bg {
+            width: 100%;
+            height: 14px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 7px;
+            overflow: hidden;
+            margin-top: 3px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        #hp-bar-fill {
+            height: 100%;
+            width: 100%;
+            border-radius: 7px;
+            background: linear-gradient(90deg, #00b894, #00cec9, #6c5ce7);
+            transition: width 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        #hp-text {
+            color: #00cec9;
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+        #lives-display {
+            margin-top: 3px;
+            font-size: 1.5rem;
+            letter-spacing: 2px;
+        }
+
+        /* Score & Combo */
+        #stats-section {
+            text-align: right;
+        }
+        #score-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        #combo-display {
+            font-size: 0.8rem;
+            color: #fd79a8;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        #timer-display {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: #dfe6e9;
+            margin-top: 3px;
+        }
+
+        /* ===== BOTTOM HUD ===== */
+        #hud-bottom {
+            position: absolute;
+            bottom: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            display: none;
+            pointer-events: auto;
+            gap: 8px;
+        }
+        .game-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            font-family: 'Kanit', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            transition: all 0.2s ease;
+            color: white;
+        }
+        .game-btn:hover {
+            transform: translateY(-3px);
+        }
+        .game-btn:active {
+            transform: translateY(0) scale(0.96);
+        }
+        #run-btn {
+            background: linear-gradient(135deg, #00b894, #00cec9);
+            box-shadow: 0 4px 20px rgba(0, 206, 201, 0.4);
+        }
+        #clear-btn {
+            background: linear-gradient(135deg, #e17055, #d63031);
+            box-shadow: 0 4px 20px rgba(214, 48, 49, 0.3);
+        }
+        #hint-btn {
+            background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+            box-shadow: 0 4px 20px rgba(108, 92, 231, 0.3);
+        }
+
+        /* ===== FEEDBACK OVERLAY ===== */
+        #feedback-overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 50;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+        }
+        #feedback-overlay.show {
+            display: flex;
+            animation: feedbackPop 0.5s ease;
+        }
+        @keyframes feedbackPop {
+            0% {
+                opacity: 0;
+                transform: scale(0.5);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+        #feedback-emoji {
+            font-size: 4.5rem;
+        }
+        #feedback-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.8rem;
+            font-weight: 900;
+            margin-top: 10px;
+            text-align: center;
+        }
+        #feedback-sub {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1rem;
+            margin-top: 5px;
+            text-align: center;
+        }
+
+        /* ===== SCREEN SHAKE ===== */
+        .shake {
+            animation: shakeAnim 0.5s ease-in-out;
+        }
+        @keyframes shakeAnim {
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+            10% {
+                transform: translateX(-12px) rotate(-1deg);
+            }
+            20% {
+                transform: translateX(12px) rotate(1deg);
+            }
+            30% {
+                transform: translateX(-10px);
+            }
+            40% {
+                transform: translateX(10px);
+            }
+            50% {
+                transform: translateX(-6px);
+            }
+            60% {
+                transform: translateX(6px);
+            }
+        }
+
+        /* ===== DAMAGE FLASH ===== */
+        #damage-flash {
+            position: absolute;
+            inset: 0;
+            z-index: 45;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(255, 0, 0, 0.4));
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.15s ease;
+        }
+        #damage-flash.active {
+            opacity: 1;
+        }
+
+        /* ===== MODAL SCREENS ===== */
+        .modal-screen {
+            position: absolute;
+            inset: 0;
+            z-index: 80;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-screen.show {
+            display: flex;
+        }
+
+        /* GAME OVER */
+        #gameover-screen {
+            background: rgba(10, 0, 0, 0.95);
+        }
+        #gameover-screen h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            color: #e74c3c;
+            text-shadow: 0 0 40px rgba(231, 76, 60, 0.6);
+            animation: pulseRed 1.5s ease-in-out infinite;
+        }
+        @keyframes pulseRed {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.5;
+            }
+        }
+        #gameover-screen p {
+            color: rgba(255, 255, 255, 0.6);
+            font-size: 1.1rem;
+            margin: 15px 0 25px;
+        }
+        .modal-btn {
+            padding: 14px 45px;
+            border-radius: 50px;
+            font-family: 'Kanit', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: none;
+            color: white;
+        }
+        .modal-btn:hover {
+            transform: scale(1.08);
+        }
+        #retry-btn {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            box-shadow: 0 0 25px rgba(231, 76, 60, 0.4);
+        }
+
+        /* LEVEL COMPLETE */
+        #levelcomplete-screen {
+            background: rgba(0, 10, 5, 0.92);
+        }
+        #levelcomplete-screen h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.2rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #00f2fe, #4facfe, #00b894);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        #star-rating {
+            font-size: 3rem;
+            margin: 12px 0;
+            letter-spacing: 8px;
+        }
+        #level-score-gained {
+            color: #f9ca24;
+            font-size: 1.2rem;
+            font-weight: 700;
+        }
+        #next-level-btn {
+            margin-top: 18px;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            color: #0a0a1a;
+            box-shadow: 0 0 30px rgba(79, 172, 254, 0.4);
+        }
+
+        /* ALL CLEAR */
+        #allclear-screen {
+            background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+            z-index: 90;
+        }
+        #allclear-screen h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2.5rem;
+            font-weight: 900;
+            background: linear-gradient(90deg, #f9ca24, #f0932b, #e74c3c, #fd79a8, #a29bfe, #00cec9);
+            background-size: 400% 400%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            animation: gradientShift 2s ease infinite;
+        }
+        #allclear-screen .trophy {
+            font-size: 5rem;
+            margin: 15px 0;
+            animation: float 2s ease-in-out infinite;
+        }
+        #final-score {
+            color: #f9ca24;
+            font-size: 1.3rem;
+            font-weight: 700;
+        }
+        #replay-btn {
+            margin-top: 20px;
+            background: linear-gradient(135deg, #f9ca24, #f0932b);
+            color: #0a0a1a;
+            box-shadow: 0 0 30px rgba(249, 202, 36, 0.4);
+        }
+        .all-clear-credit {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.7rem;
+            margin-top: 15px;
+            letter-spacing: 1px;
+            font-family: 'Orbitron', sans-serif;
+        }
+        .all-clear-credit span {
+            color: #4facfe;
+        }
+
+        /* NICKNAME & LEADERBOARD */
+        #player-nickname:focus {
+            border-color: #00cec9 !important;
+            box-shadow: 0 0 25px rgba(0, 206, 201, 0.4) !important;
+        }
+        #leaderboard-modal {
+            background: rgba(10, 10, 30, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(0, 206, 201, 0.3);
+            border-radius: 24px;
+            padding: 30px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 0 50px rgba(0, 206, 201, 0.2);
+            text-align: center;
+        }
+        #leaderboard-title {
+            font-family: 'Orbitron', sans-serif;
+            background: linear-gradient(90deg, #f9ca24, #f0932b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-size: 2rem;
+            font-weight: 900;
+            margin-bottom: 20px;
+            text-shadow: 0 0 15px rgba(249, 202, 36, 0.3);
+        }
+        .leaderboard-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+        .leaderboard-row {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            transition: background 0.2s ease;
+        }
+        .leaderboard-row:hover {
+            background: rgba(255, 255, 255, 0.03);
+        }
+        .leaderboard-cell {
+            padding: 12px 10px;
+            color: rgba(255, 255, 255, 0.85);
+            font-size: 0.95rem;
+            font-family: 'Kanit', sans-serif;
+        }
+        .rank-1 {
+            color: #f9ca24;
+            font-weight: bold;
+        }
+        .rank-2 {
+            color: #dcdde1;
+            font-weight: bold;
+        }
+        .rank-3 {
+            color: #e17055;
+            font-weight: bold;
+        }
+        .delete-score-btn:hover {
+            opacity: 1 !important;
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== SPLASH SCREEN ===== -->
+    <div id="splash-screen">
+        <div class="robot-splash">🤖</div>
+        <div class="title-glow">AR ALGORITHM</div>
+        <div class="title-glow" style="font-size: clamp(1.5rem, 3vw, 2.5rem); margin-top: 5px;">ADVENTURE</div>
+        <div class="subtitle">เกมผจญภัยอัลกอริทึม ม.1</div>
+
+        <!-- Nickname Input -->
+        <div style="margin: 15px 0 5px 0; width: 85%; max-width: 320px; text-align: center;">
+            <input type="text" id="player-nickname" placeholder="กรอกชื่อเล่นของคุณ..." maxlength="15"
+            style="width: 100%; padding: 12px 20px; font-size: 1.1rem; font-family: 'Kanit', sans-serif; text-align: center; border: 2px solid rgba(0, 206, 201, 0.4); border-radius: 50px; background: rgba(10, 10, 30, 0.6); color: #fff; outline: none; transition: all 0.3s; box-shadow: 0 0 15px rgba(0, 206, 201, 0.1);">
+        </div>
+
+        <div class="start-btn-group">
+            <button class="start-btn" id="start-btn-mouse">🖱️ เล่นด้วยเมาส์ / ทัชสกรีน</button>
+            <button class="start-btn" id="start-btn-ar">📷 เล่นด้วย AR (ต้องมีกล้อง)</button>
+        </div>
+
+        <!-- LEADERBOARD ON FRONT PAGE -->
+        <div id="front-leaderboard" style="margin-top: 30px; width: 100%; max-width: 500px; background: rgba(10, 10, 30, 0.85); backdrop-filter: blur(10px); border: 1px solid rgba(0, 206, 201, 0.3); border-radius: 20px; padding: 20px; box-shadow: 0 0 30px rgba(0, 206, 201, 0.15);">
+            <h2 style="font-family: 'Orbitron'; font-size: 1.8rem; font-weight: 900; background: linear-gradient(90deg, #f9ca24, #f0932b); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-align: center; margin-bottom: 15px; text-shadow: 0 0 10px rgba(249, 202, 36, 0.3);">🏆 LEADERBOARD</h2>
+            <div id="leaderboard-loading" style="color: #00cec9; text-align: center; font-family: 'Kanit'; margin: 20px 0;">กำลังโหลดคะแนนแบบเรียลไทม์...</div>
+            <table class="leaderboard-table" id="leaderboard-table" style="display: none; width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="border-bottom: 2px solid rgba(0,206,201,0.3); color: #00cec9; font-family: 'Orbitron'; font-size: 0.9rem;">
+                        <th style="padding: 10px; text-align: center;">RANK</th>
+                        <th style="padding: 10px; text-align: left;">PLAYER</th>
+                        <th style="padding: 10px; text-align: right;">SCORE</th>
+                        <th style="padding: 10px; text-align: center;">DEL</th>
+                    </tr>
+                </thead>
+                <tbody id="leaderboard-body"></tbody>
+            </table>
+        </div>
+        <p style="color: rgba(255,255,255,0.4); margin-top: 15px; font-size: 0.8rem;">
+            ลากบล็อกคำสั่ง → วางใน Command Zone → กดทดสอบ!
+        </p>
+        <div class="creator-credit">
+            Created by <span>PEELAPHAT KAEWKONG</span>
+        </div>
+    </div>
+
+    <!-- ===== GAME AREA ===== -->
+    <div id="game-container">
+        <video id="webcam" autoplay playsinline muted></video>
+        <canvas id="output_canvas"></canvas>
+        <div id="damage-flash"></div>
+
+        <!-- HUD TOP -->
+        <div id="hud">
+            <div id="hud-top">
+                <div class="hud-card" style="max-width: 280px;">
+                    <h3>📋 MISSION</h3>
+                    <div id="level-title">ด่านที่ 1</div>
+                    <div style="margin: 8px 0; background: rgba(0,0,0,0.3); height: 10px; border-radius: 5px; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); box-shadow: inset 0 1px 3px rgba(0,0,0,0.5);">
+                        <div id="level-progress-fill" style="height: 100%; width: 0%; background: linear-gradient(90deg, #0984e3, #74b9ff); transition: width 0.5s ease-out;"></div>
+                    </div>
+                    <div id="mission-text">กำลังโหลด...</div>
+                </div>
+                <div class="hud-card" id="hp-section">
+                    <h3>❤️ HEALTH</h3>
+                    <div id="hp-text">HP: 100/100</div>
+                    <div id="hp-bar-bg"><div id="hp-bar-fill"></div></div>
+                    <div id="lives-display">❤️❤️❤️</div>
+                </div>
+                <div class="hud-card" id="stats-section">
+                    <h3>⭐ SCORE</h3>
+                    <div id="score-display">0</div>
+                    <div id="combo-display">COMBO x1</div>
+                    <div id="timer-display">⏱ 00:00</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOTTOM BUTTONS -->
+        <div id="hud-bottom">
+            <button class="game-btn" id="hint-btn">💡 ใบ้ (-10 HP)</button>
+            <button class="game-btn" id="run-btn">▶️ ทดสอบคำตอบ</button>
+            <button class="game-btn" id="clear-btn">🗑️ ล้างทั้งหมด</button>
+        </div>
+    </div>
+
+    <!-- ===== FEEDBACK OVERLAY ===== -->
+    <div id="feedback-overlay">
+        <div id="feedback-emoji"></div>
+        <div id="feedback-text"></div>
+        <div id="feedback-sub"></div>
+    </div>
+
+    <!-- ===== GAME OVER ===== -->
+    <div id="gameover-screen" class="modal-screen">
+        <h1>💀 GAME OVER</h1>
+        <p>หุ่นยนต์พังแล้ว... ลองใหม่อีกครั้งนะ!</p>
+        <div id="gameover-score" style="color: #f9ca24; font-size: 1.1rem; margin-bottom: 18px;">คะแนนสุดท้าย: 0</div>
+        <button class="modal-btn" id="retry-btn">🔄 ลองใหม่</button>
+    </div>
+
+    <!-- ===== LEVEL COMPLETE ===== -->
+    <div id="levelcomplete-screen" class="modal-screen">
+        <h1>🎉 LEVEL CLEAR!</h1>
+        <div id="star-rating">⭐⭐⭐</div>
+        <div id="level-score-gained">+500 คะแนน</div>
+        <button class="modal-btn" id="next-level-btn">➡️ ด่านถัดไป</button>
+    </div>
+
+    <!-- ===== ALL CLEAR ===== -->
+    <div id="allclear-screen" class="modal-screen">
+        <div class="trophy">🏆</div>
+        <h1>MISSION COMPLETE!</h1>
+        <p style="color: rgba(255,255,255,0.7); font-size: 1.05rem; margin: 12px;">
+            ยินดีด้วย! คุณเป็นนักเขียนอัลกอริทึมตัวจริง!
+        </p>
+        <div id="final-score">คะแนนรวม: 0</div>
+        <button class="modal-btn" id="replay-btn" style="margin-top: 20px;">🔄 เล่นใหม่</button>
+        <div class="all-clear-credit">
+            Created by <span>PEELAPHAT KAEWKONG</span>
+        </div>
+    </div>
+
+    <!-- Firebase SDK (Compat Version) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js">
+    </script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js">
+    </script>
+
+    <!-- MediaPipe & Camera Utils -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/hands.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3.1675466862/camera_utils.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3.1675466124/drawing_utils.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-core@4.8.0/dist/tf-core.min.js" crossorigin="anonymous">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs-converter@4.8.0/dist/tf-converter.min.js" crossorigin="anonymous">
+    </script>
+    <script>
+        // ==================== AUDIO ====================
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        let audioCtx;
+
+        function initAudio() { if (!audioCtx) audioCtx = new AudioCtx(); }
+
+        function playTone(freq, dur, type = 'sine', vol = 0.12) {
+            if (!audioCtx) return;
+            try {
+                const o = audioCtx.createOscillator();
+                const g = audioCtx.createGain();
+                o.type = type;
+                o.frequency.value = freq;
+                g.gain.setValueAtTime(vol, audioCtx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + dur);
+                o.connect(g);
+                g.connect(audioCtx.destination);
+                o.start();
+                o.stop(audioCtx.currentTime + dur);
+            } catch (e) {}
+        }
+
+        function sfxGrab() { playTone(600, 0.1, 'square', 0.06); }
+
+        function sfxDrop() { playTone(800, 0.15, 'sine', 0.08); }
+
+        function sfxCorrect() { playTone(523, 0.15);
+            setTimeout(() => playTone(659, 0.15), 150);
+            setTimeout(() => playTone(784, 0.25), 300); }
+
+        function sfxWrong() { playTone(200, 0.3, 'sawtooth', 0.1);
+            setTimeout(() => playTone(150, 0.4, 'sawtooth', 0.08), 200); }
+
+        function sfxDamage() { playTone(100, 0.15, 'square', 0.15); }
+
+        function sfxLevelUp() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => playTone(f, 0.2, 'sine', 0.1), i *
+                120)); }
+
+        function sfxTick() { playTone(1000, 0.05, 'square', 0.06); }
+
+        // ==================== CANVAS ====================
+        const videoElement = document.getElementById('webcam');
+        const canvasElement = document.getElementById('output_canvas');
+        const canvasCtx = canvasElement.getContext('2d');
+
+        // ==================== UI LAYOUT ====================
+        const ui = {
+            toolboxZone: { x: 25, y: 110, width: 210, height: 0 },
+            dropZone: { x: 100, y: 110, width: 230, height: 0 },
+            blockHeight: 52,
+            blockMargin: 7,
+            blockRadius: 12
+        };
+
+        function resizeCanvas() {
+            const isMobile = window.innerWidth < 600;
+            canvasElement.width = window.innerWidth;
+            canvasElement.height = window.innerHeight;
+
+            if (isMobile) {
+                ui.toolboxZone.width = 200;
+                ui.toolboxZone.x = 10;
+                ui.dropZone.width = 200;
+                ui.dropZone.x = window.innerWidth - 210;
+                ui.blockHeight = 55;
+            } else {
+                ui.toolboxZone.width = 260;
+                ui.toolboxZone.x = 25;
+                ui.dropZone.width = 280;
+                ui.dropZone.x = window.innerWidth - 320;
+                ui.blockHeight = 65;
+            }
+        }
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+
+        // ==================== FIREBASE & LEADERBOARD ====================
+        const firebaseConfig = {
+            apiKey: "AIzaSyAeydGFPt_niMtdNSZ3_zWoxDglPNq6OA4",
+            authDomain: "algorithm-8ee4e.firebaseapp.com",
+            projectId: "algorithm-8ee4e",
+            storageBucket: "algorithm-8ee4e.firebasestorage.app",
+            messagingSenderId: "11551740325",
+            appId: "1:11551740325:web:313283624af1fc5ef4584c"
+        };
+
+        let useFirebase = false;
+        let db = null;
+        let auth = null;
+        let userUID = null;
+        let playerNickname = "";
+
+        function initFirebase() {
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                    auth = firebase.auth();
+                    useFirebase = true;
+                    console.log("Firebase Leaderboard system activated online!");
+
+                    auth.signInAnonymously()
+                        .then(cred => {
+                            userUID = cred.user.uid;
+                            console.log("Anonymous auth successful, UID:", userUID);
+                        })
+                        .catch(err => {
+                            console.error("Firebase Anonymous Auth failed:", err);
+                        });
+                } catch (e) {
+                    console.error("Firebase initialisation failed:", e);
+                }
+            } else {
+                console.log("Using Local Storage Leaderboard fallback.");
+            }
+        }
+
+        // --------------------------------------------------------------
+        //  บันทึกคะแนนแบบ High Score (อัปเดตเฉพาะเมื่อคะแนนสูงกว่าเดิม)
+        // --------------------------------------------------------------
+        function savePlayerScore(name, finalScore) {
+            if (!name || name.trim() === "") name = "Anonymous Player";
+            playerNickname = name.trim();
+
+            if (useFirebase && db && userUID) {
+                const docRef = db.collection("leaderboard").doc(userUID);
+                docRef.get().then(doc => {
+                    const currentScore = doc.exists ? doc.data().score : -1;
+                    if (finalScore > currentScore) {
+                        docRef.set({
+                            uid: userUID,
+                            name: playerNickname,
+                            score: finalScore,
+                            maxCombo: maxCombo,
+                            levelCleared: currentLevelIndex + 1,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                        }).then(() => {
+                            console.log("High score updated in Firebase!");
+                            displayLeaderboard();
+                        }).catch(err => console.error("Firebase save error:", err));
+                    } else {
+                        console.log("Score not higher than existing, not updating.");
+                    }
+                }).catch(err => console.error("Firebase get error:", err));
+            } else {
+                // Local Storage fallback
+                try {
+                    let localScores = JSON.parse(localStorage.getItem("ar_algo_leaderboard") || "[]");
+                    let existingIndex = localScores.findIndex(s => s.name.toLowerCase() === playerNickname
+                    .toLowerCase());
+                    if (existingIndex !== -1) {
+                        if (finalScore > localScores[existingIndex].score) {
+                            localScores[existingIndex].score = finalScore;
+                            localScores[existingIndex].timestamp = new Date().toISOString();
+                        }
+                    } else {
+                        localScores.push({
+                            name: playerNickname,
+                            score: finalScore,
+                            timestamp: new Date().toISOString()
+                        });
+                    }
+                    localScores.sort((a, b) => b.score - a.score);
+                    localScores = localScores.slice(0, 10);
+                    localStorage.setItem("ar_algo_leaderboard", JSON.stringify(localScores));
+                    console.log("Score saved locally!");
+                    displayLeaderboard();
+                } catch (e) {
+                    console.error("LocalStorage save failed:", e);
+                }
+            }
+        }
+
+        function getTopScores() {
+            if (useFirebase && db) {
+                return db.collection("leaderboard")
+                    .orderBy("score", "desc")
+                    .limit(10)
+                    .get()
+                    .then(snapshot => {
+                        let scores = [];
+                        snapshot.forEach(doc => {
+                            scores.push(doc.data());
+                        });
+                        return scores;
+                    })
+                    .catch(err => {
+                        console.error("Firebase get scores failed, falling back to local:", err);
+                        return getLocalTopScores();
+                    });
+            } else {
+                return Promise.resolve(getLocalTopScores());
+            }
+        }
+
+        function getLocalTopScores() {
+            try {
+                return JSON.parse(localStorage.getItem("ar_algo_leaderboard") || "[]");
+            } catch (e) {
+                console.error("LocalStorage get failed:", e);
+                return [];
+            }
+        }
+
+        function deletePlayerScore(uid, name) {
+            if (useFirebase && db) {
+                if (uid) {
+                    return db.collection("leaderboard").doc(uid).delete();
+                } else {
+                    return db.collection("leaderboard").where("name", "==", name).get()
+                        .then(snapshot => {
+                            let batch = db.batch();
+                            snapshot.forEach(doc => {
+                                batch.delete(doc.ref);
+                            });
+                            return batch.commit();
+                        });
+                }
+            } else {
+                try {
+                    let localScores = JSON.parse(localStorage.getItem("ar_algo_leaderboard") || "[]");
+                    localScores = localScores.filter(s => s.name !== name);
+                    localStorage.setItem("ar_algo_leaderboard", JSON.stringify(localScores));
+                    return Promise.resolve();
+                } catch (e) {
+                    return Promise.reject(e);
+                }
+            }
+        }
+
+        const ADMIN_PASSWORD = "admin1234";
+
+        function requestDeleteScore(uid, name) {
+            const password = prompt(`กรุณากรอกรหัสผ่านผู้ดูแลระบบเพื่อลบชื่อ "${name}":`);
+            if (password === null) return;
+
+            if (password === ADMIN_PASSWORD) {
+                deletePlayerScore(uid, name)
+                    .then(() => {
+                        showFeedback('🗑️', 'ลบรายชื่อสำเร็จ!', `ลบชื่อ ${name} แล้ว`, '#e74c3c');
+                        displayLeaderboard();
+                    })
+                    .catch(err => {
+                        alert("ไม่สามารถลบชื่อได้: " + err);
+                    });
+            } else {
+                alert("รหัสผ่านไม่ถูกต้อง! ไม่สามารถลบได้");
+            }
+        }
+        window.requestDeleteScore = requestDeleteScore;
+
+        function displayLeaderboard() {
+            const loading = document.getElementById('leaderboard-loading');
+            const table = document.getElementById('leaderboard-table');
+            const body = document.getElementById('leaderboard-body');
+
+            if (!loading || !table || !body) return;
+
+            body.innerHTML = "";
+            loading.style.display = "block";
+            table.style.display = "none";
+
+            getTopScores().then(scores => {
+                loading.style.display = "none";
+                table.style.display = "table";
+
+                if (scores.length === 0) {
+                    body.innerHTML =
+                        `<tr><td colspan="4" style="text-align: center; color: rgba(255,255,255,0.4); padding: 20px; font-family: 'Kanit';">ยังไม่มีคะแนนในตารางอันดับ</td></tr>`;
+                    return;
+                }
+
+                scores.forEach((s, idx) => {
+                    const rank = idx + 1;
+                    let rankClass = "";
+                    if (rank === 1) rankClass = "rank-1";
+                    else if (rank === 2) rankClass = "rank-2";
+                    else if (rank === 3) rankClass = "rank-3";
+
+                    const row = document.createElement('tr');
+                    row.className = "leaderboard-row";
+                    row.innerHTML = `
+                            <td class="leaderboard-cell ${rankClass}" style="text-align: center; font-weight: bold; font-family: 'Orbitron';">${rank}</td>
+                            <td class="leaderboard-cell" style="text-align: left; font-weight: bold;">${s.name}</td>
+                            <td class="leaderboard-cell" style="text-align: right; color: #f9ca24; font-family: 'Orbitron'; font-weight: bold;">${s.score.toLocaleString()}</td>
+                            <td class="leaderboard-cell" style="text-align: center;">
+                                <button class="delete-score-btn" onclick="requestDeleteScore('${s.uid || ''}', '${s.name}')" style="background: none; border: none; cursor: pointer; font-size: 1rem; color: #e74c3c; opacity: 0.6; transition: opacity 0.2s;">🗑️</button>
+                            </td>
+                        `;
+                    body.appendChild(row);
+                });
+            }).catch(err => {
+                console.error("Leaderboard display error:", err);
+                loading.innerText = "เกิดข้อผิดพลาดในการโหลดคะแนน";
+            });
+        }
+
+        // ==================== GAME STATE ====================
+        let gameStarted = false;
+        let useAR = false;
+        let currentLevelIndex = 0;
+        let workspaceBlocks = [];
+        let draggedBlock = null;
+        let isPinching = false;
+        let score = 0;
+        let combo = 1;
+        let maxCombo = 1;
+        let hp = 100;
+        let maxHp = 100;
+        let lives = 3;
+        let timer = 0;
+        let timeRemaining = 60;
+        let timerInterval = null;
+        let wrongAttempts = 0;
+        let hintsUsed = 0;
+        let particles = [];
+        let floatingTexts = [];
+        let robotState = { animPhase: 0 };
+        let robotPos = { row: 0, col: 0, dir: 0 };
+        let robotTrail = [];
+        let animFrameId = null;
+        let mouseX = 0,
+            mouseY = 0;
+        let mouseDown = false;
+        let mouseDragBlock = null;
+
+        // ==================== LEVELS (30 ด่าน) ====================
+        const levels = [
+            // ---- ด่าน 1-10 (เดิม) ----
+            {
+                level: 1,
+                title: "ก้าวแรกของหุ่นยนต์",
+                desc: "สั่งหุ่นยนต์เดินหน้า 2 ก้าวตรงๆ ไปเก็บดาว ⭐",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" }
+                ],
+                solution: ["fwd", "fwd"],
+                timeLimit: 60,
+                hpPenalty: 15,
+                grid: { rows: 3, cols: 3, start: [0, 1], end: [2, 1] }
+            },
+            {
+                level: 2,
+                title: "หักเลี้ยวซ้าย!",
+                desc: "เดินหน้า 1 ก้าว → เลี้ยวซ้าย → เดินหน้าอีก 1 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" }
+                ],
+                solution: ["fwd", "left", "fwd"],
+                timeLimit: 60,
+                hpPenalty: 15,
+                grid: { rows: 3, cols: 3, start: [0, 2], end: [1, 1] }
+            },
+            {
+                level: 3,
+                title: "เลี้ยวขวาด้วย!",
+                desc: "เดินหน้า 1 ก้าว → เลี้ยวขวา → เดินหน้าอีก 1 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" }
+                ],
+                solution: ["fwd", "right", "fwd"],
+                timeLimit: 55,
+                hpPenalty: 18,
+                grid: { rows: 3, cols: 3, start: [0, 0], end: [1, 1] }
+            },
+            {
+                level: 4,
+                title: "ทางเดินแคบๆ",
+                desc: "เดินหน้า 3 ก้าวตรงๆ โดยไม่ชนกำแพง!",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" }
+                ],
+                solution: ["fwd", "fwd", "fwd"],
+                timeLimit: 50,
+                hpPenalty: 20,
+                grid: { rows: 4, cols: 3, start: [0, 1], end: [3, 1], walls: [
+                        [0, 0],
+                        [1, 0],
+                        [2, 0],
+                        [3, 0],
+                        [0, 2],
+                        [1, 2],
+                        [2, 2],
+                        [3, 2]
+                    ] }
+            },
+            {
+                level: 5,
+                title: "ลูปมาแล้ว!",
+                desc: "ใช้ 'วนซ้ำ x2' + 'เดินหน้า' แทนการวางเดินหน้า 2 ครั้งติดกัน!",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" }
+                ],
+                solution: ["loop2", "fwd"],
+                timeLimit: 45,
+                hpPenalty: 22,
+                grid: { rows: 3, cols: 3, start: [0, 1], end: [2, 1] }
+            },
+            {
+                level: 6,
+                title: "ทางซิกแซก",
+                desc: "หลบกำแพง! เดินหน้า → เลี้ยวขวา → เดินหน้า → เลี้ยวซ้าย → เดินหน้า",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" }
+                ],
+                solution: ["fwd", "right", "fwd", "left", "fwd"],
+                timeLimit: 50,
+                hpPenalty: 22,
+                grid: { rows: 4, cols: 4, start: [0, 0], end: [2, 1], walls: [
+                        [1, 0],
+                        [1, 1]
+                    ] }
+            },
+            {
+                level: 7,
+                title: "กำแพงขวางทาง!",
+                desc: "เดินหน้า 2 ก้าว → ถ้ามีกำแพง → เลี้ยวซ้าย → เดินหน้า",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" }
+                ],
+                solution: ["fwd", "fwd", "if_wall", "left", "fwd"],
+                timeLimit: 60,
+                hpPenalty: 25,
+                grid: { rows: 4, cols: 4, start: [0, 2], end: [2, 1], walls: [
+                        [3, 2]
+                    ] }
+            },
+            {
+                level: 8,
+                title: "เจอบอส! ลูปและเลี้ยว",
+                desc: "วนซ้ำเดินหน้า 2 ครั้ง -> เลี้ยวขวา -> วนซ้ำเดินหน้า 2 ครั้ง",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["loop2", "fwd", "right", "loop2", "fwd"],
+                timeLimit: 70,
+                hpPenalty: 30,
+                grid: { rows: 4, cols: 4, start: [0, 0], end: [2, 2], walls: [
+                        [2, 1],
+                        [3, 0]
+                    ] }
+            },
+            {
+                level: 9,
+                title: "ลูป 3 รอบ!",
+                desc: "ใช้คำสั่งใหม่ 'วนซ้ำ x3' เพื่อเดินหน้าผ่านช่องแคบๆ",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop3", "fwd"],
+                timeLimit: 50,
+                hpPenalty: 20,
+                grid: { rows: 4, cols: 3, start: [0, 1], end: [3, 1], walls: [
+                        [0, 0],
+                        [1, 0],
+                        [2, 0],
+                        [3, 0],
+                        [0, 2],
+                        [1, 2],
+                        [2, 2],
+                        [3, 2]
+                    ] }
+            },
+            {
+                level: 10,
+                title: "เลี้ยวแล้วลูป",
+                desc: "เลี้ยวขวา แล้วเดินหน้า 3 ก้าวให้ถึงเป้าหมาย",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["right", "loop3", "fwd"],
+                timeLimit: 55,
+                hpPenalty: 20,
+                grid: { rows: 3, cols: 4, start: [1, 0], end: [1, 3], walls: [
+                        [2, 1],
+                        [2, 2],
+                        [0, 1],
+                        [0, 2]
+                    ] }
+            },
+            // ---- ด่าน 11-20 (เดิม) ----
+            {
+                level: 11,
+                title: "เช็คกำแพงแบบเซียน",
+                desc: "เดินหน้า -> ถ้ามีกำแพงให้เลี้ยวขวา -> เดินหน้า",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["fwd", "if_wall", "right", "fwd"],
+                timeLimit: 60,
+                hpPenalty: 25,
+                grid: { rows: 3, cols: 3, start: [0, 0], end: [1, 1], walls: [
+                        [2, 0]
+                    ] }
+            },
+            {
+                level: 12,
+                title: "ลูปคู่กับเงื่อนไข",
+                desc: "ลูปเดิน 2 ก้าว -> ถ้ามีกำแพงเลี้ยวซ้าย -> ลูปเดิน 2 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["loop2", "fwd", "if_wall", "left", "loop2", "fwd"],
+                timeLimit: 65,
+                hpPenalty: 25,
+                grid: { rows: 4, cols: 4, start: [0, 3], end: [2, 1], walls: [
+                        [3, 3],
+                        [2, 2]
+                    ] }
+            },
+            {
+                level: 13,
+                title: "เข้ามุมฉาก",
+                desc: "ลูปเดิน 3 ก้าว -> เลี้ยวซ้าย -> ลูปเดิน 3 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop3", "fwd", "left", "loop3", "fwd"],
+                timeLimit: 65,
+                hpPenalty: 25,
+                grid: { rows: 4, cols: 4, start: [0, 3], end: [3, 0], walls: [
+                        [1, 2],
+                        [2, 1]
+                    ] }
+            },
+            {
+                level: 14,
+                title: "หลบหลีกมือโปร",
+                desc: "ลูปเดิน 2 -> ถ้ามีกำแพง เลี้ยวขวา -> ลูปเดิน 3",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["loop2", "fwd", "if_wall", "right", "loop3", "fwd"],
+                timeLimit: 75,
+                hpPenalty: 30,
+                grid: { rows: 5, cols: 5, start: [0, 0], end: [2, 3], walls: [
+                        [3, 0],
+                        [1, 1]
+                    ] }
+            },
+            {
+                level: 15,
+                title: "สุดยอดนักคิดระบบ!",
+                desc: "รวมทุกอย่าง! ลูป 3 -> ซ้าย -> กำแพง? -> ขวา -> ลูป 2",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["loop3", "fwd", "left", "if_wall", "right", "loop2", "fwd"],
+                timeLimit: 90,
+                hpPenalty: 35,
+                grid: { rows: 6, cols: 6, start: [0, 2], end: [5, 2], walls: [
+                        [3, 1],
+                        [4, 1],
+                        [2, 1]
+                    ] }
+            },
+            {
+                level: 16,
+                title: "หักศอกสองจังหวะ",
+                desc: "หลบหลีกในพื้นที่แคบ ลูป 3 -> ขวา -> กำแพง? ซ้าย -> ลูป 2",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["loop3", "fwd", "right", "if_wall", "left", "loop2", "fwd"],
+                timeLimit: 90,
+                hpPenalty: 35,
+                grid: { rows: 6, cols: 6, start: [0, 0], end: [5, 0], walls: [
+                        [3, 1]
+                    ] }
+            },
+            {
+                level: 17,
+                title: "ซิกแซกแบบมืออาชีพ",
+                desc: "เดิน 2 ก้าว -> ซ้าย -> 2 ก้าว -> ขวา -> 2 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" }
+                ],
+                solution: ["loop2", "fwd", "left", "loop2", "fwd", "right", "loop2", "fwd"],
+                timeLimit: 100,
+                hpPenalty: 40,
+                grid: { rows: 6, cols: 6, start: [0, 5], end: [4, 3], walls: [
+                        [2, 4],
+                        [4, 2]
+                    ] }
+            },
+            {
+                level: 18,
+                title: "กลลวงกำแพง!",
+                desc: "ด่านนี้ต้องใช้การตรวจกำแพง 2 รอบ!",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["loop3", "fwd", "if_wall", "right", "if_wall", "left", "loop3", "fwd"],
+                timeLimit: 110,
+                hpPenalty: 40,
+                grid: { rows: 7, cols: 7, start: [0, 0], end: [6, 0], walls: [
+                        [4, 0],
+                        [3, 1]
+                    ] }
+            },
+            {
+                level: 19,
+                title: "อ้อมค่ายกล",
+                desc: "เดินหลบกำแพง 3 -> ขวา -> 3 -> ขวา -> 2",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop3", "fwd", "right", "loop3", "fwd", "right", "loop2", "fwd"],
+                timeLimit: 120,
+                hpPenalty: 45,
+                grid: { rows: 6, cols: 6, start: [0, 0], end: [1, 3], walls: [
+                        [1, 1],
+                        [2, 2],
+                        [2, 1]
+                    ] }
+            },
+            {
+                level: 20,
+                title: "สุดยอดเซียนอัลกอริทึม!",
+                desc: "บล็อกยาวที่สุด! ลูป3 -> ขวา -> ลูป2 -> กำแพง? -> ซ้าย -> ลูป3 -> กำแพง? -> ขวา -> 1 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["loop3", "fwd", "right", "loop2", "fwd", "if_wall", "left", "loop3", "fwd", "if_wall", "right",
+                    "fwd"
+                ],
+                timeLimit: 150,
+                hpPenalty: 50,
+                grid: { rows: 8, cols: 8, start: [0, 0], end: [6, 3], walls: [
+                        [3, 3],
+                        [7, 2]
+                    ] }
+            },
+            // ---- ด่าน 21-30 (ใหม่ ยากขึ้น) ----
+            {
+                level: 21,
+                title: "ลูปซ้อนลูป",
+                desc: "ใช้ loop2 ข้างใน loop2 เพื่อเดินหน้า 4 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" }
+                ],
+                solution: ["loop2", "loop2", "fwd"],
+                timeLimit: 45,
+                hpPenalty: 20,
+                grid: { rows: 5, cols: 5, start: [0, 2], end: [4, 2], walls: [
+                        [1, 0],
+                        [2, 0],
+                        [3, 0],
+                        [1, 4],
+                        [2, 4],
+                        [3, 4]
+                    ] }
+            },
+            {
+                level: 22,
+                title: "เงื่อนไขกำแพง 2 ชั้น",
+                desc: "เดินหน้า ถ้าติดกำแพงให้เลี้ยวซ้าย แล้วเดินหน้า ถ้าติดกำแพงอีกให้เลี้ยวขวา",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["fwd", "if_wall", "left", "fwd", "if_wall", "right", "fwd"],
+                timeLimit: 60,
+                hpPenalty: 25,
+                grid: { rows: 5, cols: 5, start: [0, 1], end: [4, 1], walls: [
+                        [1, 0],
+                        [2, 0],
+                        [3, 0],
+                        [4, 0]
+                    ] }
+            },
+            {
+                level: 23,
+                title: "ทางคดเคี้ยวยาว",
+                desc: "เดินหน้า 2 -> ขวา -> 2 -> ซ้าย -> 2 -> ขวา -> 2",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" }
+                ],
+                solution: ["loop2", "fwd", "right", "loop2", "fwd", "left", "loop2", "fwd", "right", "loop2", "fwd"],
+                timeLimit: 70,
+                hpPenalty: 30,
+                grid: { rows: 6, cols: 6, start: [0, 1], end: [5, 1], walls: [
+                        [0, 0],
+                        [1, 0],
+                        [2, 0],
+                        [3, 0],
+                        [4, 0],
+                        [5, 0]
+                    ] }
+            },
+            {
+                level: 24,
+                title: "เขาวงกตเล็ก",
+                desc: "ใช้ลูปและเงื่อนไขนำทางผ่านเขาวงกต",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" }
+                ],
+                solution: ["fwd", "if_wall", "right", "fwd", "loop2", "fwd", "left", "fwd"],
+                timeLimit: 80,
+                hpPenalty: 30,
+                grid: { rows: 6, cols: 6, start: [0, 0], end: [5, 5], walls: [
+                        [1, 0],
+                        [1, 1],
+                        [1, 2],
+                        [2, 2],
+                        [3, 2],
+                        [3, 1],
+                        [3, 0],
+                        [4, 0],
+                        [4, 1],
+                        [4, 2],
+                        [0, 1]
+                    ] }
+            },
+            {
+                level: 25,
+                title: "ลูป 3 ซ้อน",
+                desc: "ใช้ loop3 ข้างใน loop2 เพื่อเดินหน้า 6 ก้าว",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop2", "loop3", "fwd"],
+                timeLimit: 50,
+                hpPenalty: 25,
+                grid: { rows: 7, cols: 7, start: [0, 3], end: [6, 3], walls: [
+                        [1, 2],
+                        [2, 2],
+                        [3, 2],
+                        [4, 2],
+                        [5, 2],
+                        [1, 4],
+                        [2, 4],
+                        [3, 4],
+                        [4, 4],
+                        [5, 4]
+                    ] }
+            },
+            {
+                level: 26,
+                title: "เช็คกำแพงซ้ายขวา",
+                desc: "เดินหน้า ถ้าซ้ายมีกำแพงให้เลี้ยวขวา ถ้าขวามีกำแพงให้เลี้ยวซ้าย",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" }
+                ],
+                solution: ["fwd", "if_wall", "right", "fwd", "if_wall", "left", "fwd"],
+                timeLimit: 65,
+                hpPenalty: 28,
+                grid: { rows: 6, cols: 6, start: [0, 2], end: [5, 2], walls: [
+                        [1, 1],
+                        [2, 1],
+                        [3, 1],
+                        [4, 1],
+                        [5, 1]
+                    ] }
+            },
+            {
+                level: 27,
+                title: "เดินรูปตัว U",
+                desc: "เดินหน้า 3 -> เลี้ยวซ้าย -> 3 -> เลี้ยวซ้าย -> 3",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop3", "fwd", "left", "loop3", "fwd", "left", "loop3", "fwd"],
+                timeLimit: 75,
+                hpPenalty: 30,
+                grid: { rows: 6, cols: 6, start: [0, 0], end: [5, 0], walls: [
+                        [0, 1],
+                        [1, 1],
+                        [2, 1],
+                        [3, 1],
+                        [4, 1],
+                        [5, 1],
+                        [0, 2],
+                        [1, 2],
+                        [2, 2],
+                        [3, 2],
+                        [4, 2],
+                        [5, 2]
+                    ] }
+            },
+            {
+                level: 28,
+                title: "ซิกแซกสุดโหด",
+                desc: "เดิน 3 -> ขวา -> 3 -> ซ้าย -> 3 -> ขวา -> 3",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop3", "fwd", "right", "loop3", "fwd", "left", "loop3", "fwd", "right", "loop3", "fwd"],
+                timeLimit: 90,
+                hpPenalty: 35,
+                grid: { rows: 7, cols: 7, start: [0, 0], end: [6, 0], walls: [
+                        [0, 1],
+                        [1, 1],
+                        [2, 1],
+                        [3, 1],
+                        [4, 1],
+                        [5, 1],
+                        [6, 1]
+                    ] }
+            },
+            {
+                level: 29,
+                title: "บอสสุดท้าย",
+                desc: "ใช้ทุกคำสั่ง! ลูปและเงื่อนไขผสมกัน",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop3", "fwd", "if_wall", "right", "loop2", "fwd", "left", "loop3", "fwd"],
+                timeLimit: 100,
+                hpPenalty: 40,
+                grid: { rows: 8, cols: 8, start: [0, 0], end: [7, 0], walls: [
+                        [3, 1],
+                        [4, 1],
+                        [5, 1],
+                        [6, 1],
+                        [2, 1]
+                    ] }
+            },
+            {
+                level: 30,
+                title: "สุดยอดอัลกอริทึม",
+                desc: "รวมทุกอย่าง! ลูปซ้อนลูป เงื่อนไข หลบหลีก",
+                toolbox: [
+                    { id: "fwd", text: "⬆️ เดินหน้า", color: "#0984e3" },
+                    { id: "left", text: "↩️ เลี้ยวซ้าย", color: "#e17055" },
+                    { id: "right", text: "↪️ เลี้ยวขวา", color: "#00b894" },
+                    { id: "if_wall", text: "🧱 ถ้ามีกำแพง", color: "#fdcb6e" },
+                    { id: "loop2", text: "🔁 วนซ้ำ x2", color: "#6c5ce7" },
+                    { id: "loop3", text: "🔁 วนซ้ำ x3", color: "#6c5ce7" }
+                ],
+                solution: ["loop3", "fwd", "if_wall", "right", "loop2", "fwd", "left", "loop3", "fwd", "if_wall", "left",
+                    "fwd"
+                ],
+                timeLimit: 120,
+                hpPenalty: 50,
+                grid: { rows: 8, cols: 8, start: [0, 0], end: [7, 0], walls: [
+                        [3, 1],
+                        [4, 1],
+                        [5, 1],
+                        [6, 1],
+                        [2, 1],
+                        [7, 1]
+                    ] }
+            }
+        ];
+
+        // ==================== HELPER FUNCTIONS ====================
+        function spawnParticles(x, y, color, count = 12) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x,
+                    y,
+                    vx: (Math.random() - 0.5) * 8,
+                    vy: (Math.random() - 0.5) * 8 - 2,
+                    life: 1,
+                    decay: 0.02 + Math.random() * 0.02,
+                    size: 3 + Math.random() * 4,
+                    color,
+                    shape: Math.random() > 0.5 ? 'circle' : 'star'
+                });
+            }
+        }
+
+        function spawnFloatingText(x, y, text, color = '#f9ca24') {
+            floatingTexts.push({ x, y, text, color, life: 1, vy: -1.5 });
+        }
+
+        function updateParticles() {
+            particles = particles.filter(p => { p.x += p.vx;
+                p.y += p.vy;
+                p.vy += 0.12;
+                p.life -= p.decay; return p.life > 0; });
+            floatingTexts = floatingTexts.filter(ft => { ft.y += ft.vy;
+                ft.life -= 0.018; return ft.life > 0; });
+        }
+
+        function drawParticles(ctx) {
+            particles.forEach(p => {
+                ctx.globalAlpha = p.life;
+                ctx.fillStyle = p.color;
+                if (p.shape === 'circle') { ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                    ctx.fill(); } else drawStar(ctx, p.x, p.y, 5, p.size, p.size / 2);
+            });
+            ctx.globalAlpha = 1;
+            floatingTexts.forEach(ft => {
+                ctx.globalAlpha = ft.life;
+                ctx.fillStyle = ft.color;
+                ctx.font = 'bold 22px Kanit';
+                ctx.textAlign = 'center';
+                ctx.fillText(ft.text, ft.x, ft.y);
+            });
+            ctx.globalAlpha = 1;
+            ctx.textAlign = 'start';
+        }
+
+        function drawStar(ctx, cx, cy, spikes, outerR, innerR) {
+            let rot = Math.PI / 2 * 3,
+                step = Math.PI / spikes;
+            ctx.beginPath();
+            ctx.moveTo(cx, cy - outerR);
+            for (let i = 0; i < spikes; i++) {
+                ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+                rot += step;
+                ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+                rot += step;
+            }
+            ctx.closePath();
+            ctx.fill();
+        }
+
+        function drawRoundedRect(ctx, x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.lineTo(x + w - r, y);
+            ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+            ctx.lineTo(x + w, y + h - r);
+            ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+            ctx.lineTo(x + r, y + h);
+            ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+            ctx.lineTo(x, y + r);
+            ctx.quadraticCurveTo(x, y, x + r, y);
+            ctx.closePath();
+        }
+
+        function lightenColor(hex, amt) {
+            const n = parseInt(hex.replace('#', ''), 16);
+            let r = Math.min(255, (n >> 16) + amt);
+            let g = Math.min(255, ((n >> 8) & 0xFF) + amt);
+            let b = Math.min(255, (n & 0xFF) + amt);
+            return `rgb(${r},${g},${b})`;
+        }
+
+        function drawBlock(ctx, x, y, w, h, color, text, hovered = false, index = -1) {
+            ctx.shadowColor = color;
+            ctx.shadowBlur = hovered ? 22 : 10;
+            ctx.shadowOffsetY = 3;
+            const grad = ctx.createLinearGradient(x, y, x, y + h);
+            grad.addColorStop(0, lightenColor(color, 30));
+            grad.addColorStop(1, color);
+            ctx.fillStyle = grad;
+            drawRoundedRect(ctx, x, y, w, h, ui.blockRadius);
+            ctx.fill();
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.shadowOffsetY = 0;
+            const shine = ctx.createLinearGradient(x, y, x, y + h / 2);
+            shine.addColorStop(0, 'rgba(255,255,255,0.22)');
+            shine.addColorStop(1, 'rgba(255,255,255,0)');
+            ctx.fillStyle = shine;
+            drawRoundedRect(ctx, x, y, w, h / 2, ui.blockRadius);
+            ctx.fill();
+            if (index >= 0) {
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.arc(x + 22, y + h / 2, 16, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'white';
+                ctx.font = 'bold 15px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText(index + 1, x + 22, y + h / 2 + 5);
+                ctx.textAlign = 'start';
+            }
+            ctx.fillStyle = 'white';
+            ctx.font = 'bold 18px Kanit';
+            ctx.fillText(text, x + (index >= 0 ? 45 : 18), y + h / 2 + 6);
+            if (hovered) {
+                ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+                ctx.lineWidth = 2;
+                drawRoundedRect(ctx, x, y, w, h, ui.blockRadius);
+                ctx.stroke();
+            }
+        }
+
+        function isInside(x, y, rect) {
+            return x > rect.x && x < rect.x + rect.width && y > rect.y && y < rect.y + rect.height;
+        }
+
+        function simulateRobot(blocks, grid) {
+            let row = grid.start[0],
+                col = grid.start[1],
+                dir = 0;
+            const trail = [{ row, col }];
+            const dRow = [1, 0, -1, 0];
+            const dCol = [0, 1, 0, -1];
+
+            function isWallInFront(r, c, d) {
+                const nr = r + dRow[d];
+                const nc = c + dCol[d];
+                if (nr < 0 || nr >= grid.rows || nc < 0 || nc >= grid.cols) return true;
+                if (grid.walls) {
+                    return grid.walls.some(w => w[0] === nr && w[1] === nc);
+                }
+                return false;
+            }
+
+            let i = 0;
+            let loopCount = 0;
+            let executingLoop = false;
+            let loopTarget = -1;
+
+            while (i < blocks.length && trail.length < 50) {
+                const b = blocks[i];
+                if (b.id === 'loop2' || b.id === 'loop3') {
+                    const count = b.id === 'loop3' ? 3 : 2;
+                    if (i + 1 < blocks.length) {
+                        if (!executingLoop) {
+                            executingLoop = true;
+                            loopCount = count;
+                            loopTarget = i + 1;
+                        }
+                        if (loopCount > 0) {
+                            i = loopTarget;
+                            loopCount--;
+                            continue;
+                        } else {
+                            executingLoop = false;
+                            i += 2;
+                            continue;
+                        }
+                    } else {
+                        i++;
+                    }
+                } else if (b.id === 'if_wall') {
+                    if (isWallInFront(row, col, dir)) {
+                        i++;
+                    } else {
+                        i += 2;
+                    }
+                } else {
+                    if (b.id === 'fwd') {
+                        if (!isWallInFront(row, col, dir)) {
+                            row += dRow[dir];
+                            col += dCol[dir];
+                            trail.push({ row, col });
+                        }
+                    } else if (b.id === 'left') {
+                        dir = (dir + 3) % 4;
+                    } else if (b.id === 'right') {
+                        dir = (dir + 1) % 4;
+                    }
+
+                    if (executingLoop && i === loopTarget) {
+                        i = loopTarget - 1;
+                    } else {
+                        i++;
+                    }
+                }
+            }
+            return { row, col, dir, trail };
+        }
+
+        function drawMiniGrid(ctx) {
+            const lvl = levels[currentLevelIndex];
+            if (!lvl || !lvl.grid) return;
+            const grid = lvl.grid;
+            const centerX = canvasElement.width / 2;
+            const centerY = canvasElement.height / 2 + 30;
+            const cellSize = Math.min(80, (canvasElement.width - 650) / grid.cols, (canvasElement.height - 350) / grid
+                .rows);
+            if (cellSize < 20) return;
+            const gridW = grid.cols * cellSize,
+                gridH = grid.rows * cellSize;
+            const startX = centerX - gridW / 2,
+                startY = centerY - gridH / 2;
+            const time = Date.now() / 1000;
+
+            const sim = simulateRobot(workspaceBlocks, grid);
+            robotPos = sim;
+            robotTrail = sim.trail;
+
+            ctx.fillStyle = 'rgba(0,0,0,0.45)';
+            drawRoundedRect(ctx, startX - 15, startY - 35, gridW + 30, gridH + 50, 14);
+            ctx.fill();
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = 'bold 16px Orbitron';
+            ctx.fillText('🗺️ MAP', startX - 8, startY - 18);
+
+            if (robotTrail.length > 1) {
+                ctx.strokeStyle = 'rgba(0,206,201,0.35)';
+                ctx.lineWidth = 3;
+                ctx.setLineDash([4, 3]);
+                ctx.lineDashOffset = -time * 20;
+                ctx.beginPath();
+                for (let t = 0; t < robotTrail.length; t++) {
+                    const tx = startX + robotTrail[t].col * cellSize + cellSize / 2;
+                    const ty = startY + (grid.rows - 1 - robotTrail[t].row) * cellSize + cellSize / 2;
+                    if (t === 0) ctx.moveTo(tx, ty);
+                    else ctx.lineTo(tx, ty);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            robotTrail.forEach((tp, idx) => {
+                if (idx === 0 || idx === robotTrail.length - 1) return;
+                const tx = startX + tp.col * cellSize + cellSize / 2;
+                const ty = startY + (grid.rows - 1 - tp.row) * cellSize + cellSize / 2;
+                ctx.fillStyle = `rgba(0,206,201,${0.3 + 0.15*Math.sin(time*3+idx)})`;
+                ctx.beginPath();
+                ctx.arc(tx, ty, 4, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.font = 'bold 14px Orbitron';
+                ctx.textAlign = 'center';
+                ctx.fillText(idx, tx, ty - 10);
+                ctx.textAlign = 'start';
+            });
+
+            for (let r = 0; r < grid.rows; r++) {
+                for (let c = 0; c < grid.cols; c++) {
+                    const cx = startX + c * cellSize,
+                        cy = startY + r * cellSize;
+                    ctx.strokeStyle = 'rgba(79,172,254,0.2)';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(cx, cy, cellSize, cellSize);
+                    ctx.fillStyle = `rgba(79,172,254,${0.03 + 0.02*Math.sin(time*2+r+c)})`;
+                    ctx.fillRect(cx, cy, cellSize, cellSize);
+
+                    const robotRow = grid.rows - 1 - r;
+                    if (grid.walls && grid.walls.some(w => w[0] === robotRow && w[1] === c)) {
+                        ctx.fillStyle = 'rgba(231,76,60,0.4)';
+                        ctx.fillRect(cx + 2, cy + 2, cellSize - 4, cellSize - 4);
+                        ctx.font = `${Math.round(cellSize*0.6)}px sans-serif`;
+                        ctx.textAlign = 'center';
+                        ctx.fillText('🧱', cx + cellSize / 2, cy + cellSize * 0.75);
+                        ctx.textAlign = 'start';
+                    }
+                }
+            }
+
+            const startCellY = startY + (grid.rows - 1 - grid.start[0]) * cellSize;
+            const startCellX = startX + grid.start[1] * cellSize;
+            ctx.fillStyle = 'rgba(0,184,148,0.25)';
+            ctx.fillRect(startCellX, startCellY, cellSize, cellSize);
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = 'bold 12px Kanit';
+            ctx.textAlign = 'center';
+            ctx.fillText('START', startCellX + cellSize / 2, startCellY + cellSize - 4);
+            ctx.textAlign = 'start';
+
+            const ey = startY + (grid.rows - 1 - grid.end[0]) * cellSize + cellSize / 2;
+            const ex = startX + grid.end[1] * cellSize + cellSize / 2;
+            ctx.fillStyle = 'rgba(249,202,36,0.15)';
+            ctx.fillRect(startX + grid.end[1] * cellSize, startY + (grid.rows - 1 - grid.end[0]) * cellSize, cellSize,
+                cellSize);
+            const pulse = 1 + 0.15 * Math.sin(time * 4);
+            ctx.font = `${Math.round(20*pulse)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.fillText('⭐', ex, ey + 7);
+            ctx.textAlign = 'start';
+
+            robotState.animPhase += 0.04;
+            const bob = Math.sin(robotState.animPhase) * 3;
+            const robY = startY + (grid.rows - 1 - sim.row) * cellSize + cellSize / 2;
+            const robX = startX + sim.col * cellSize + cellSize / 2;
+            const dirArrows = ['↑', '→', '↓', '←'];
+            ctx.fillStyle = 'rgba(0,206,201,0.7)';
+            ctx.font = 'bold 12px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText(dirArrows[sim.dir], robX, robY - cellSize * 0.35);
+            ctx.font = `${Math.round(cellSize*0.55)}px sans-serif`;
+            ctx.fillText('🤖', robX, robY + 8 + bob);
+            ctx.textAlign = 'start';
+
+            const atGoal = sim.row === grid.end[0] && sim.col === grid.end[1];
+            if (atGoal && workspaceBlocks.length > 0) {
+                ctx.fillStyle = `rgba(0,255,100,${0.3 + 0.2*Math.sin(time*5)})`;
+                ctx.fillRect(startX + grid.end[1] * cellSize, startY + (grid.rows - 1 - grid.end[0]) * cellSize,
+                    cellSize, cellSize);
+                ctx.fillStyle = '#2ecc71';
+                ctx.font = 'bold 16px Kanit';
+                ctx.textAlign = 'center';
+                ctx.fillText('✓ ถึงแล้ว!', ex, ey + cellSize / 2 + 10);
+                ctx.textAlign = 'start';
+            }
+        }
+
+        function drawUI(ctx, levelData, pointerX, pointerY) {
+            const time = Date.now() / 1000;
+            const toolboxH = levelData.toolbox.length * (ui.blockHeight + ui.blockMargin) + 20;
+            ui.toolboxZone.height = toolboxH + 45;
+
+            ctx.shadowColor = 'transparent';
+            ctx.shadowBlur = 0;
+            ctx.fillStyle = 'rgba(10,10,40,0.72)';
+            drawRoundedRect(ctx, ui.toolboxZone.x, ui.toolboxZone.y, ui.toolboxZone.width, ui.toolboxZone.height, 14);
+            ctx.fill();
+            ctx.strokeStyle = 'rgba(108,92,231,0.35)';
+            ctx.lineWidth = 1.5;
+            drawRoundedRect(ctx, ui.toolboxZone.x, ui.toolboxZone.y, ui.toolboxZone.width, ui.toolboxZone.height, 14);
+            ctx.stroke();
+            ctx.fillStyle = '#a29bfe';
+            ctx.font = 'bold 16px Orbitron';
+            ctx.fillText('🧰 TOOLBOX', ui.toolboxZone.x + 12, ui.toolboxZone.y + 24);
+            levelData.toolbox.forEach((tool, i) => {
+                const tx = ui.toolboxZone.x + 8,
+                    ty = ui.toolboxZone.y + 36 + i * (ui.blockHeight + ui.blockMargin);
+                const hov = pointerX !== null && isInside(pointerX, pointerY, { x: tx, y: ty, width: ui
+                        .toolboxZone.width - 16, height: ui.blockHeight });
+                drawBlock(ctx, tx, ty, ui.toolboxZone.width - 16, ui.blockHeight, tool.color, tool.text, hov);
+            });
+
+            const dropH = Math.max(280, workspaceBlocks.length * (ui.blockHeight + ui.blockMargin) + 70);
+            ui.dropZone.height = dropH;
+            ctx.fillStyle = 'rgba(10,10,40,0.72)';
+            drawRoundedRect(ctx, ui.dropZone.x, ui.dropZone.y, ui.dropZone.width, ui.dropZone.height, 14);
+            ctx.fill();
+            ctx.setLineDash([7, 4]);
+            ctx.lineDashOffset = time * 25;
+            ctx.strokeStyle = `rgba(0,206,201,${0.3 + 0.12*Math.sin(time*3)})`;
+            ctx.lineWidth = 2;
+            drawRoundedRect(ctx, ui.dropZone.x, ui.dropZone.y, ui.dropZone.width, ui.dropZone.height, 14);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = '#00cec9';
+            ctx.font = 'bold 16px Orbitron';
+            ctx.fillText('📦 COMMAND ZONE', ui.dropZone.x + 10, ui.dropZone.y + 24);
+
+            workspaceBlocks.forEach((block, i) => {
+                const bx = ui.dropZone.x + 8,
+                    by = ui.dropZone.y + 36 + i * (ui.blockHeight + ui.blockMargin);
+                const hov = pointerX !== null && isInside(pointerX, pointerY, { x: bx, y: by, width: ui
+                        .dropZone.width - 16, height: ui.blockHeight });
+                drawBlock(ctx, bx, by, ui.dropZone.width - 16, ui.blockHeight, block.color, block.text, hov, i);
+                if (i > 0) {
+                    ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.moveTo(bx + 18, by);
+                    ctx.lineTo(bx + 18, by - ui.blockMargin);
+                    ctx.stroke();
+                }
+            });
+            if (workspaceBlocks.length === 0) {
+                ctx.fillStyle = `rgba(255,255,255,${0.25 + 0.12*Math.sin(time*2)})`;
+                ctx.font = '18px Kanit';
+                ctx.textAlign = 'center';
+                ctx.fillText('🖱️ ลากบล็อกมาวางที่นี่', ui.dropZone.x + ui.dropZone.width / 2, ui.dropZone.y + 80);
+                ctx.textAlign = 'start';
+            }
+            drawMiniGrid(ctx);
+        }
+
+        function drawPointer(ctx, x, y, active) {
+            if (x === null || y === null) return;
+            const time = Date.now() / 1000;
+            const r = active ? 18 : 14;
+            const pulseR = r + 3 * Math.sin(time * 5);
+            ctx.beginPath();
+            ctx.arc(x, y, pulseR + 6, 0, Math.PI * 2);
+            ctx.fillStyle = active ? 'rgba(231,76,60,0.12)' : 'rgba(0,206,201,0.08)';
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(x, y, pulseR, 0, Math.PI * 2);
+            ctx.strokeStyle = active ? '#e74c3c' : '#00cec9';
+            ctx.lineWidth = 2.5;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(x, y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = active ? '#ff6b6b' : '#81ecec';
+            ctx.fill();
+        }
+
+        // ==================== GAME INIT & LEVEL MANAGEMENT ====================
+        function startGame(arMode) {
+            const nicknameInput = document.getElementById('player-nickname');
+            playerNickname = nicknameInput.value.trim() || "Player";
+            localStorage.setItem("ar_algo_player_nickname", playerNickname);
+
+            initAudio();
+            useAR = arMode;
+            document.getElementById('splash-screen').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            document.getElementById('hud-bottom').style.display = 'flex';
+            gameStarted = true;
+            // รีเซ็ตคะแนนให้เป็น 0 ทุกครั้งที่เริ่มเกมใหม่ (ไม่สะสมข้ามรอบ)
+            score = 0;
+            combo = 1;
+            maxCombo = 1;
+            hp = 100;
+            lives = 3;
+            wrongAttempts = 0;
+            currentLevelIndex = 0;
+            loadLevel(0);
+            if (!arMode) {
+                startRenderLoop();
+            } else {
+                startAR();
+            }
+        }
+
+        function loadLevel(index) {
+            if (index >= levels.length) { showAllClear(); return; }
+            const lvl = levels[index];
+            const grid = lvl.grid;
+            workspaceBlocks = [];
+            draggedBlock = null;
+            mouseDragBlock = null;
+            wrongAttempts = 0;
+            hintsUsed = 0;
+            robotPos = { row: grid.start[0], col: grid.start[1], dir: 0 };
+            robotTrail = [];
+            document.getElementById('level-title').innerText = `ด่านที่ ${lvl.level}: ${lvl.title}`;
+            document.getElementById('level-progress-fill').style.width = `${(lvl.level / levels.length) * 100}%`;
+            document.getElementById('mission-text').innerText = lvl.desc;
+            updateHUD();
+            startTimer();
+        }
+
+        function startTimer() {
+            const lvl = levels[currentLevelIndex];
+            timer = 0;
+            timeRemaining = lvl ? lvl.timeLimit : 60;
+            if (timerInterval) clearInterval(timerInterval);
+            updateTimerDisplay();
+            timerInterval = setInterval(() => {
+                timer++;
+                timeRemaining--;
+                updateTimerDisplay();
+                if (timeRemaining <= 0) {
+                    takeDamage(5, '⏰ หมดเวลา! -5 HP');
+                    timeRemaining = 0;
+                } else if (timeRemaining <= 10) {
+                    sfxTick();
+                }
+            }, 1000);
+        }
+
+        function updateTimerDisplay() {
+            const timerEl = document.getElementById('timer-display');
+            const m = String(Math.floor(Math.max(0, timeRemaining) / 60)).padStart(2, '0');
+            const s = String(Math.max(0, timeRemaining) % 60).padStart(2, '0');
+            timerEl.innerText = `⏱ ${m}:${s}`;
+            if (timeRemaining <= 10) {
+                timerEl.style.color = '#e74c3c';
+                timerEl.style.textShadow = '0 0 10px rgba(231,76,60,0.6)';
+                timerEl.style.fontSize = '1.1rem';
+            } else if (timeRemaining <= 20) {
+                timerEl.style.color = '#fdcb6e';
+                timerEl.style.textShadow = '0 0 5px rgba(253,203,110,0.4)';
+                timerEl.style.fontSize = '1rem';
+            } else {
+                timerEl.style.color = '#dfe6e9';
+                timerEl.style.textShadow = 'none';
+                timerEl.style.fontSize = '0.9rem';
+            }
+        }
+
+        function updateHUD() {
+            document.getElementById('hp-text').innerText = `HP: ${Math.max(0,hp)}/${maxHp}`;
+            document.getElementById('hp-bar-fill').style.width = `${Math.max(0, hp/maxHp*100)}%`;
+            const fill = document.getElementById('hp-bar-fill');
+            if (hp > 60) fill.style.background = 'linear-gradient(90deg,#00b894,#00cec9,#6c5ce7)';
+            else if (hp > 30) fill.style.background = 'linear-gradient(90deg,#fdcb6e,#e17055)';
+            else fill.style.background = 'linear-gradient(90deg,#e74c3c,#d63031)';
+            let hearts = '';
+            for (let i = 0; i < 3; i++) hearts += i < lives ? '❤️' : '🖤';
+            document.getElementById('lives-display').innerText = hearts;
+            document.getElementById('score-display').innerText = score.toLocaleString();
+            document.getElementById('combo-display').innerText = `COMBO x${combo}`;
+            document.getElementById('combo-display').style.color = combo > 3 ? '#e74c3c' : combo > 1 ? '#fdcb6e' :
+                '#fd79a8';
+        }
+
+        function takeDamage(amount, reason = '') {
+            hp -= amount;
+            sfxDamage();
+            document.getElementById('game-container').classList.add('shake');
+            setTimeout(() => document.getElementById('game-container').classList.remove('shake'), 500);
+            document.getElementById('damage-flash').classList.add('active');
+            setTimeout(() => document.getElementById('damage-flash').classList.remove('active'), 300);
+            spawnFloatingText(canvasElement.width / 2, canvasElement.height / 2, `-${amount} HP`, '#e74c3c');
+            if (reason) spawnFloatingText(canvasElement.width / 2, canvasElement.height / 2 + 30, reason, '#ff7675');
+            updateHUD();
+            if (hp <= 0) {
+                hp = 0;
+                lives--;
+                updateHUD();
+                if (lives <= 0) { gameOver(); } else { hp = maxHp;
+                    combo = 1;
+                    updateHUD();
+                    showFeedback('💔', 'เสียชีวิต!', `เหลืออีก ${lives} หัวใจ`, '#e74c3c'); }
+            }
+        }
+
+        function runSolution() {
+            if (document.getElementById('levelcomplete-screen').classList.contains('show')) return;
+            const lvl = levels[currentLevelIndex];
+            if (!lvl) return;
+            if (workspaceBlocks.length === 0) { showFeedback('🤔', 'ยังไม่มีคำสั่ง!', 'ลากบล็อกมาวางก่อนนะ', '#fdcb6e'); return; }
+            const ans = workspaceBlocks.map(b => b.id);
+
+            const sim = simulateRobot(workspaceBlocks, lvl.grid);
+            const atGoal = sim.row === lvl.grid.end[0] && sim.col === lvl.grid.end[1];
+            let correct = atGoal && ans.length <= lvl.solution.length + 1;
+
+            const requiredBlocks = [...new Set(lvl.solution)];
+            for (const req of requiredBlocks) {
+                if (!ans.includes(req)) correct = false;
+            }
+
+            if (correct) {
+                sfxCorrect();
+                const timeBonus = Math.max(0, timeRemaining * 10);
+                const comboBonus = combo * 100;
+                const perfect = wrongAttempts === 0 ? 500 : 0;
+                const lvlScore = Math.max(50, 200 + timeBonus + comboBonus + perfect - hintsUsed * 50);
+                score += lvlScore;
+                combo++;
+                if (combo > maxCombo) maxCombo = combo;
+                spawnParticles(canvasElement.width / 2, canvasElement.height / 2, '#f9ca24', 35);
+                spawnParticles(canvasElement.width / 2, canvasElement.height / 2, '#00cec9', 25);
+                updateHUD();
+                clearInterval(timerInterval);
+                let stars = 1;
+                if (wrongAttempts === 0 && timer <= lvl.timeLimit / 2) stars = 3;
+                else if (wrongAttempts <= 1 && timer <= lvl.timeLimit) stars = 2;
+                setTimeout(() => showLevelComplete(stars, lvlScore), 600);
+            } else {
+                sfxWrong();
+                wrongAttempts++;
+                combo = 1;
+                takeDamage(lvl.hpPenalty, `ผิด! ครั้งที่ ${wrongAttempts}`);
+                if (wrongAttempts >= 3) showFeedback('😰', 'ลองใหม่นะ!', 'กดปุ่ม 💡 ดูคำใบ้ได้!', '#e17055');
+                else showFeedback('❌', 'ไม่ถูกต้อง!', `ลำดับยังไม่ถูก (โดน -${lvl.hpPenalty} HP)`, '#e74c3c');
+                updateHUD();
+            }
+        }
+
+        function clearWorkspace() {
+            workspaceBlocks = [];
+            mouseDragBlock = null;
+            draggedBlock = null;
+            const lvl = levels[currentLevelIndex];
+            if (lvl && lvl.grid) { robotPos = { row: lvl.grid.start[0], col: lvl.grid.start[1], dir: 0 };
+                robotTrail = []; }
+            spawnFloatingText(ui.dropZone.x + ui.dropZone.width / 2, ui.dropZone.y + 50, '🗑️ ล้างแล้ว!', '#dfe6e9');
+        }
+
+        function useHint() {
+            const lvl = levels[currentLevelIndex];
+            if (!lvl) return;
+            hintsUsed++;
+            takeDamage(10, 'ใช้คำใบ้ -10 HP');
+            const idx = Math.min(hintsUsed - 1, lvl.solution.length - 1);
+            const hint = lvl.toolbox.find(t => t.id === lvl.solution[idx]);
+            if (hint) showFeedback('💡', 'คำใบ้!', `คำสั่งที่ ${idx+1}: ${hint.text}`, '#a29bfe');
+        }
+
+        function showFeedback(emoji, text, sub, color) {
+            const o = document.getElementById('feedback-overlay');
+            document.getElementById('feedback-emoji').innerText = emoji;
+            document.getElementById('feedback-text').innerText = text;
+            document.getElementById('feedback-text').style.color = color;
+            document.getElementById('feedback-sub').innerText = sub;
+            o.className = 'show';
+            setTimeout(() => { o.className = ''; }, 2000);
+        }
+
+        function showLevelComplete(stars, gained) {
+            sfxLevelUp();
+            let s = '';
+            for (let i = 0; i < 3; i++) s += i < stars ? '⭐' : '☆';
+            document.getElementById('star-rating').innerText = s;
+            document.getElementById('level-score-gained').innerText = `+${gained.toLocaleString()} คะแนน`;
+            document.getElementById('levelcomplete-screen').classList.add('show');
+        }
+
+        function nextLevel() {
+            document.getElementById('levelcomplete-screen').classList.remove('show');
+            currentLevelIndex++;
+            loadLevel(currentLevelIndex);
+        }
+
+        function showAllClear() {
+            clearInterval(timerInterval);
+            document.getElementById('final-score').innerText =
+                `คะแนนรวม: ${score.toLocaleString()} | Max Combo: x${maxCombo}`;
+            document.getElementById('allclear-screen').classList.add('show');
+            spawnParticles(canvasElement.width / 2, canvasElement.height / 2, '#f9ca24', 50);
+            // บันทึกคะแนนแบบ High Score
+            savePlayerScore(playerNickname, score);
+        }
+
+        function gameOver() {
+            clearInterval(timerInterval);
+            document.getElementById('gameover-score').innerText = `คะแนนสุดท้าย: ${score.toLocaleString()}`;
+            document.getElementById('gameover-screen').classList.add('show');
+            savePlayerScore(playerNickname, score);
+        }
+
+        function restartGame() {
+            document.getElementById('gameover-screen').classList.remove('show');
+            document.getElementById('allclear-screen').classList.remove('show');
+            // รีเซ็ตคะแนนเป็น 0 สำหรับรอบใหม่
+            score = 0;
+            combo = 1;
+            maxCombo = 1;
+            hp = 100;
+            lives = 3;
+            currentLevelIndex = 0;
+            loadLevel(0);
+            updateHUD();
+        }
+
+        // ==================== AR MODE ====================
+        function startAR() {
+            showFeedback('⏳', 'กำลังโหลดระบบ AR...', 'กรุณารอสักครู่...', '#00cec9');
+
+            const hands = new Hands({ locateFile: (file) =>
+                    `https://cdn.jsdelivr.net/npm/@mediapipe/hands@0.4.1675469240/${file}` });
+            hands.setOptions({
+                maxNumHands: 1,
+                modelComplexity: 1,
+                minDetectionConfidence: 0.5,
+                minTrackingConfidence: 0.5
+            });
+
+            hands.onResults((results) => {
+                canvasCtx.save();
+                canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+                canvasCtx.translate(canvasElement.width, 0);
+                canvasCtx.scale(-1, 1);
+                canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+                canvasCtx.setTransform(1, 0, 0, 1, 0, 0);
+
+                if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
+                    const landmarks = results.multiHandLandmarks[0];
+                    const indexTip = landmarks[8];
+                    const thumbTip = landmarks[4];
+
+                    const arX = (1 - indexTip.x) * canvasElement.width;
+                    const arY = indexTip.y * canvasElement.height;
+
+                    const dist = Math.sqrt(Math.pow(indexTip.x - thumbTip.x, 2) + Math.pow(indexTip.y - thumbTip.y,
+                    2));
+                    const currentlyPinching = dist < 0.06;
+
+                    if (currentlyPinching && !isPinching) {
+                        onPointerDown(null, { x: arX, y: arY });
+                    } else if (!currentlyPinching && isPinching) {
+                        onPointerUp(null);
+                    } else {
+                        onPointerMove(null, { x: arX, y: arY });
+                    }
+                    isPinching = currentlyPinching;
+                }
+
+                const levelData = levels[currentLevelIndex];
+                if (levelData && gameStarted) {
+                    drawUI(canvasCtx, levelData, mouseX, mouseY);
+                    if (mouseDragBlock) {
+                        canvasCtx.globalAlpha = 0.88;
+                        drawBlock(canvasCtx, mouseDragBlock.x, mouseDragBlock.y, ui.dropZone.width - 16, ui
+                            .blockHeight, mouseDragBlock.color, mouseDragBlock.text, true);
+                        canvasCtx.globalAlpha = 1;
+                    }
+                    updateParticles();
+                    drawParticles(canvasCtx);
+                }
+                canvasCtx.restore();
+            });
+
+            const camera = new Camera(videoElement, {
+                onFrame: async () => {
+                    await hands.send({ image: videoElement });
+                },
+                width: 640,
+                height: 480
+            });
+
+            camera.start()
+                .then(() => {
+                    showFeedback('📷', 'เริ่มระบบ AR สำเร็จ', 'ใช้กล้องได้แล้ว!', '#00b894');
+                })
+                .catch((err) => {
+                    console.error("Camera start failed:", err);
+                    alert(
+                        "ไม่สามารถเข้าถึงหรือเปิดกล้องได้!\n\nสาเหตุที่เป็นไปได้:\n1. ยังไม่ได้รับสิทธิ์อนุญาตกล้องในเบราว์เซอร์\n2. กล้องกำลังถูกใช้งานโดยแอปอื่นอยู่\n3. เบราว์เซอร์หรืออุปกรณ์ไม่รองรับ\n\nคำแนะนำ:\n- ตรวจสอบสิทธิ์การเข้าถึงกล้อง (คลิกสัญลักษณ์แม่กุญแจที่แถบที่อยู่เว็บด้านบน)\n- ปิดแอปอื่นที่กำลังใช้กล้องอยู่แล้วลองใหม่อีกครั้ง"
+                        );
+                });
+        }
+
+        // ==================== RENDER LOOP (Mouse/Touch) ====================
+        function startRenderLoop() {
+            function frame() {
+                animFrameId = requestAnimationFrame(frame);
+                if (!gameStarted) return;
+                const levelData = levels[currentLevelIndex];
+                if (!levelData) return;
+
+                const ctx = canvasCtx;
+                ctx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+
+                const bgGrad = ctx.createLinearGradient(0, 0, canvasElement.width, canvasElement.height);
+                bgGrad.addColorStop(0, '#0a0a2e');
+                bgGrad.addColorStop(0.5, '#1a1a4e');
+                bgGrad.addColorStop(1, '#0a0a2e');
+                ctx.fillStyle = bgGrad;
+                ctx.fillRect(0, 0, canvasElement.width, canvasElement.height);
+
+                const time = Date.now() / 1000;
+                ctx.fillStyle = 'rgba(255,255,255,0.3)';
+                for (let i = 0; i < 40; i++) {
+                    const sx = (i * 137.5 + time * 8 * (i % 3 + 1)) % canvasElement.width;
+                    const sy = (i * 89.3 + time * 3 * (i % 2 + 1)) % canvasElement.height;
+                    const ss = 1 + Math.sin(time * 2 + i) * 0.8;
+                    ctx.beginPath();
+                    ctx.arc(sx, sy, ss, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+
+                drawUI(ctx, levelData, mouseX, mouseY);
+                if (!useAR) drawPointer(ctx, mouseX, mouseY, mouseDown);
+                if (mouseDragBlock) {
+                    ctx.globalAlpha = 0.88;
+                    drawBlock(ctx, mouseDragBlock.x, mouseDragBlock.y, ui.dropZone.width - 16, ui.blockHeight,
+                        mouseDragBlock.color, mouseDragBlock.text, true);
+                    ctx.globalAlpha = 1;
+                }
+                updateParticles();
+                drawParticles(ctx);
+            }
+            frame();
+        }
+
+        // ==================== POINTER EVENTS ====================
+        function getCanvasPos(e) {
+            const rect = canvasElement.getBoundingClientRect();
+            const scaleX = canvasElement.width / rect.width;
+            const scaleY = canvasElement.height / rect.height;
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return { x: (clientX - rect.left) * scaleX, y: (clientY - rect.top) * scaleY };
+        }
+
+        canvasElement.addEventListener('mousedown', onPointerDown);
+        canvasElement.addEventListener('mousemove', onPointerMove);
+        canvasElement.addEventListener('mouseup', onPointerUp);
+        canvasElement.addEventListener('touchstart', e => { e.preventDefault();
+            onPointerDown(e); }, { passive: false });
+        canvasElement.addEventListener('touchmove', e => { e.preventDefault();
+            onPointerMove(e); }, { passive: false });
+        canvasElement.addEventListener('touchend', e => { e.preventDefault();
+            onPointerUp(e); }, { passive: false });
+
+        function onPointerDown(e, manualPos = null) {
+            if (!gameStarted) return;
+            if (!manualPos && useAR) return;
+            const pos = manualPos || getCanvasPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+            mouseDown = true;
+
+            const levelData = levels[currentLevelIndex];
+            if (!levelData) return;
+
+            for (let i = workspaceBlocks.length - 1; i >= 0; i--) {
+                const bx = ui.dropZone.x + 8,
+                    by = ui.dropZone.y + 36 + i * (ui.blockHeight + ui.blockMargin);
+                if (isInside(mouseX, mouseY, { x: bx, y: by, width: ui.dropZone.width - 16, height: ui
+                        .blockHeight })) {
+                    mouseDragBlock = workspaceBlocks.splice(i, 1)[0];
+                    mouseDragBlock.x = mouseX - (ui.dropZone.width - 16) / 2;
+                    mouseDragBlock.y = mouseY - ui.blockHeight / 2;
+                    sfxGrab();
+                    return;
+                }
+            }
+            levelData.toolbox.forEach((tool, i) => {
+                const tx = ui.toolboxZone.x + 8,
+                    ty = ui.toolboxZone.y + 36 + i * (ui.blockHeight + ui.blockMargin);
+                if (isInside(mouseX, mouseY, { x: tx, y: ty, width: ui.toolboxZone.width - 16, height: ui
+                        .blockHeight })) {
+                    mouseDragBlock = { id: tool.id, text: tool.text, color: tool.color, x: mouseX - (ui
+                            .dropZone.width - 16) / 2, y: mouseY - ui.blockHeight / 2 };
+                    sfxGrab();
+                }
+            });
+        }
+
+        function onPointerMove(e, manualPos = null) {
+            if (!gameStarted) return;
+            if (!manualPos && useAR) return;
+            const pos = manualPos || getCanvasPos(e);
+            mouseX = pos.x;
+            mouseY = pos.y;
+            if (mouseDragBlock) {
+                mouseDragBlock.x = mouseX - (ui.dropZone.width - 16) / 2;
+                mouseDragBlock.y = mouseY - ui.blockHeight / 2;
+            }
+        }
+
+        function onPointerUp(e) {
+            if (!gameStarted) return;
+            mouseDown = false;
+            if (mouseDragBlock) {
+                if (isInside(mouseDragBlock.x + (ui.dropZone.width - 16) / 2, mouseDragBlock.y + ui.blockHeight / 2,
+                        ui.dropZone)) {
+                    workspaceBlocks.push({ id: mouseDragBlock.id, text: mouseDragBlock.text, color: mouseDragBlock
+                            .color });
+                    sfxDrop();
+                    spawnParticles(mouseDragBlock.x + (ui.dropZone.width - 16) / 2, mouseDragBlock.y + ui
+                        .blockHeight / 2, mouseDragBlock.color, 8);
+                }
+                mouseDragBlock = null;
+            }
+        }
+
+        // ==================== EVENT BINDINGS ====================
+        document.getElementById('start-btn-mouse').addEventListener('click', () => startGame(false));
+        document.getElementById('start-btn-ar').addEventListener('click', () => startGame(true));
+        document.getElementById('run-btn').addEventListener('click', runSolution);
+        document.getElementById('clear-btn').addEventListener('click', clearWorkspace);
+        document.getElementById('hint-btn').addEventListener('click', useHint);
+        document.getElementById('next-level-btn').addEventListener('click', nextLevel);
+        document.getElementById('retry-btn').addEventListener('click', restartGame);
+        document.getElementById('replay-btn').addEventListener('click', restartGame);
+
+        window.addEventListener('load', () => {
+            const savedNickname = localStorage.getItem("ar_algo_player_nickname") || "";
+            const nicknameInput = document.getElementById('player-nickname');
+            if (nicknameInput) nicknameInput.value = savedNickname;
+            initFirebase();
+            setTimeout(() => displayLeaderboard(), 500);
+        });
+    </script>
+</body>
+</html>
