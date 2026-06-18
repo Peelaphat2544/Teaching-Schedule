@@ -327,6 +327,7 @@
                         <p class="text-navy-400 text-sm mt-0.5">แสดงตารางการจัดการเรียนการสอนของครูทุกท่าน</p>
                     </div>
                     <div class="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+                        <input type="week" id="filter-week" class="border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white text-navy-700 cursor-pointer" title="ดูตารางของสัปดาห์ที่มีการสลับคาบ">
                         <input type="text" id="filter-text" placeholder="ค้นหาชั้นเรียน, ครู, วิชา..." class="border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white text-navy-700 min-w-[220px]">
                         <select id="filter-day" class="border border-navy-200 rounded-lg px-4 py-2.5 text-sm bg-white text-navy-700 font-medium cursor-pointer min-w-[160px]">
                             <option value="all">แสดงทุกวัน</option>
@@ -408,40 +409,41 @@
             <!-- TAB 4: สลับ/แลกคาบสอน -->
             <section id="tab-swap" class="tab-content">
                 <div class="mb-6">
-                    <h2 class="text-xl font-bold text-navy-800">ระบบสลับและแลกคาบสอน</h2>
-                    <p class="text-navy-400 text-sm mt-0.5">ค้นหาและจับคู่คาบสอนระหว่างครู 2 ท่าน เพื่อสลับเวลาสอนกัน</p>
+                    <h2 class="text-xl font-bold text-navy-800">ระบบสลับและแลกคาบสอน (รายสัปดาห์)</h2>
+                    <p class="text-navy-400 text-sm mt-0.5">จับคู่สลับคาบสอนชั่วคราวระหว่างครูที่สอนในระดับชั้นเดียวกัน (เช่น ม.6 แลกกับ ม.6)</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 bg-navy-50/60 p-6 rounded-xl border border-navy-100">
-                    <!-- Teacher 1 -->
+                    <!-- Step 1: Request Swap -->
                     <div class="border border-navy-200 p-5 rounded-lg bg-white shadow-sm">
-                        <h3 class="text-sm font-bold text-navy-700 mb-3 border-b border-navy-100 pb-2">คาบสอนที่ 1 (ผู้ขอแลก)</h3>
-                        <label class="block text-xs font-semibold text-navy-600 mb-1.5">เลือกครู</label>
+                        <h3 class="text-sm font-bold text-navy-700 mb-3 border-b border-navy-100 pb-2">1. เลือกคาบของท่านที่ต้องการแลก</h3>
+                        <label class="block text-xs font-semibold text-navy-600 mb-1.5">เลือกครูผู้ขอแลก</label>
                         <select id="swap-teacher-1" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer mb-3">
                             <option value="">— เลือกครู —</option>
                         </select>
-                        <label class="block text-xs font-semibold text-navy-600 mb-1.5">เลือกคาบสอน</label>
-                        <select id="swap-schedule-1" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer" disabled>
+                        <label class="block text-xs font-semibold text-navy-600 mb-1.5">เลือกคาบสอนของท่าน</label>
+                        <select id="swap-schedule-1" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer mb-3" disabled>
                             <option value="">— กรุณาเลือกครูก่อน —</option>
                         </select>
+                        <label class="block text-xs font-semibold text-navy-600 mb-1.5">สัปดาห์ที่ต้องการแลก</label>
+                        <input type="week" id="swap-week" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer mb-4" required>
+                        <button id="btn-find-partner" class="btn-primary w-full px-4 py-2.5 rounded-lg text-sm font-semibold">ค้นหาคาบที่ระดับชั้นเดียวกัน</button>
                     </div>
 
-                    <!-- Teacher 2 -->
+                    <!-- Step 2: Target Swap -->
                     <div class="border border-navy-200 p-5 rounded-lg bg-white shadow-sm">
-                        <h3 class="text-sm font-bold text-navy-700 mb-3 border-b border-navy-100 pb-2">คาบสอนที่ 2 (ผู้ที่ต้องการแลกด้วย)</h3>
-                        <label class="block text-xs font-semibold text-navy-600 mb-1.5">เลือกครู</label>
-                        <select id="swap-teacher-2" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer mb-3">
-                            <option value="">— เลือกครู —</option>
-                        </select>
-                        <label class="block text-xs font-semibold text-navy-600 mb-1.5">เลือกคาบสอน</label>
-                        <select id="swap-schedule-2" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer" disabled>
-                            <option value="">— กรุณาเลือกครูก่อน —</option>
-                        </select>
+                        <h3 class="text-sm font-bold text-navy-700 mb-3 border-b border-navy-100 pb-2">2. เลือกคาบที่ค้นพบ (เพื่อสลับเวลาสอน)</h3>
+                        <div id="swap-partner-results" class="text-sm text-navy-500 py-4 text-center">
+                            กรุณาเลือกคาบและกด "ค้นหาคาบที่ระดับชั้นเดียวกัน"
+                        </div>
+                        <div id="swap-partner-container" class="hidden">
+                            <label class="block text-xs font-semibold text-navy-600 mb-1.5">เลือกคาบของครูท่านอื่นที่ต้องการแลก</label>
+                            <select id="swap-schedule-2" class="w-full border border-navy-200 rounded-lg px-3 py-2.5 text-sm bg-white cursor-pointer mb-4">
+                                <!-- Options populated dynamically -->
+                            </select>
+                            <button id="btn-execute-swap" class="btn-primary w-full px-4 py-2.5 rounded-lg font-bold text-sm shadow-md bg-green-600 hover:bg-green-700">ยืนยันการสลับคาบชั่วคราว</button>
+                        </div>
                     </div>
-                </div>
-
-                <div class="mt-6 flex justify-center">
-                    <button id="btn-execute-swap" class="btn-primary px-8 py-3 rounded-lg font-bold text-sm shadow-md">ดำเนินการสลับคาบสอน</button>
                 </div>
             </section>
 
@@ -586,6 +588,7 @@
         let teachers = [];
         let subjects = [];
         let schedules = [];
+        let tempSwaps = [];
         let currentUser = null;
         const ADMIN_EMAIL = 'peelaphat@psuwit.ac.th';
 
@@ -695,7 +698,7 @@
         initAuth();
 
         // Data Fetching
-        let unsubTeachers, unsubSubjects, unsubSchedules;
+        let unsubTeachers, unsubSubjects, unsubSchedules, unsubTempSwaps;
         let dataLoaded = false;
 
         const handleFirestoreError = (collectionName, err) => {
@@ -721,6 +724,7 @@
             if (unsubTeachers) unsubTeachers();
             if (unsubSubjects) unsubSubjects();
             if (unsubSchedules) unsubSchedules();
+            if (unsubTempSwaps) unsubTempSwaps();
 
             try {
                 unsubTeachers = onSnapshot(collection(db, getCollectionPath('teachers')), (snapshot) => {
@@ -746,9 +750,13 @@
                     renderMasterSchedule();
                     const t1 = document.getElementById('swap-teacher-1');
                     if(t1 && t1.value) updateSwapSchedules(1, t1.value);
-                    const t2 = document.getElementById('swap-teacher-2');
-                    if(t2 && t2.value) updateSwapSchedules(2, t2.value);
                 }, (err) => handleFirestoreError('schedules', err));
+
+                unsubTempSwaps = onSnapshot(collection(db, getCollectionPath('temporary_swaps')), (snapshot) => {
+                    tempSwaps = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    console.log(`Loaded ${tempSwaps.length} temporary swaps.`);
+                    renderMasterSchedule();
+                }, (err) => console.error('Error loading temp swaps', err));
             } catch (e) {
                 console.error("Firestore setup error:", e);
                 showModal('ข้อผิดพลาดฐานข้อมูล',
@@ -811,6 +819,7 @@
 
         const updateSwapSchedules = (teacherNum, teacherId) => {
             const selSch = document.getElementById(`swap-schedule-${teacherNum}`);
+            if (!selSch) return;
             if (!teacherId) {
                 selSch.innerHTML = `<option value="">— กรุณาเลือกครูก่อน —</option>`;
                 selSch.disabled = true;
@@ -836,6 +845,12 @@
             selSch.disabled = false;
         };
 
+        const getGradeLevel = (roomStr) => {
+            if (!roomStr) return null;
+            const match = roomStr.match(/ม\.[1-6]/);
+            return match ? match[0] : null;
+        };
+
         const updateSelectOptions = () => {
             const tSelect = document.getElementById('sel-sch-teacher');
             tSelect.innerHTML = `<option value="">— เลือกครูผู้สอน —</option>` +
@@ -847,20 +862,13 @@
 
             // Swap Tab
             const swapT1 = document.getElementById('swap-teacher-1');
-            const swapT2 = document.getElementById('swap-teacher-2');
             const tOptions = `<option value="">— เลือกครู —</option>` + teachers.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
             
             const oldT1 = swapT1.value;
-            const oldT2 = swapT2.value;
-            
             swapT1.innerHTML = tOptions;
-            swapT2.innerHTML = tOptions;
-            
             swapT1.value = oldT1;
-            swapT2.value = oldT2;
             
             if(oldT1) updateSwapSchedules(1, oldT1);
-            if(oldT2) updateSwapSchedules(2, oldT2);
         };
 
         const renderScheduleAdmin = () => {
@@ -907,6 +915,26 @@
             const tbody = document.getElementById('master-schedule-body');
             const filterDay = document.getElementById('filter-day').value;
             const filterText = document.getElementById('filter-text') ? document.getElementById('filter-text').value.toLowerCase().trim() : '';
+            const filterWeek = document.getElementById('filter-week') ? document.getElementById('filter-week').value : '';
+
+            // Apply Temporary Swaps for the selected week
+            let effectiveSchedules = schedules.map(s => ({ ...s }));
+            if (filterWeek) {
+                const activeSwaps = tempSwaps.filter(sw => sw.week === filterWeek);
+                activeSwaps.forEach(sw => {
+                    const sch1 = effectiveSchedules.find(s => s.id === sw.sch1Id);
+                    const sch2 = effectiveSchedules.find(s => s.id === sw.sch2Id);
+                    if (sch1 && sch2) {
+                        // Swap day and period
+                        const tempDay = sch1.day;
+                        const tempPeriod = sch1.period;
+                        sch1.day = sch2.day;
+                        sch1.period = sch2.period;
+                        sch2.day = tempDay;
+                        sch2.period = tempPeriod;
+                    }
+                });
+            }
 
             let html = '';
             for (let d = 1; d <= 5; d++) {
@@ -915,7 +943,7 @@
                 let row = `<tr><td class="font-semibold text-center text-navy-700" style="background: linear-gradient(180deg, #f8f9fc, #f0f3f8);">${dayNames[d]}</td>`;
                 for (let p = 1; p <= 9; p++) {
                     // FIX: Use parseInt for consistent comparison regardless of stored type
-                    let classInSlot = schedules.filter(s => parseInt(s.day) === d && parseInt(s.period) === p);
+                    let classInSlot = effectiveSchedules.filter(s => parseInt(s.day) === d && parseInt(s.period) === p);
 
                     if (filterText !== '') {
                         classInSlot = classInSlot.filter(sch => {
@@ -1042,61 +1070,95 @@
 
         // Swap Logic
         document.getElementById('swap-teacher-1').addEventListener('change', (e) => updateSwapSchedules(1, e.target.value));
-        document.getElementById('swap-teacher-2').addEventListener('change', (e) => updateSwapSchedules(2, e.target.value));
 
-        document.getElementById('btn-execute-swap').addEventListener('click', async () => {
+        document.getElementById('btn-find-partner').addEventListener('click', () => {
             const schId1 = document.getElementById('swap-schedule-1').value;
-            const schId2 = document.getElementById('swap-schedule-2').value;
+            const week = document.getElementById('swap-week').value;
 
-            if (!schId1 || !schId2) {
-                showModal('ข้อมูลไม่ครบ', 'กรุณาเลือกคาบสอนที่ต้องการสลับทั้ง 2 คาบ');
-                return;
-            }
-
-            if (schId1 === schId2) {
-                showModal('ข้อมูลไม่ถูกต้อง', 'ไม่สามารถสลับคาบเดียวกันได้');
+            if (!schId1 || !week) {
+                showModal('ข้อมูลไม่ครบ', 'กรุณาเลือกคาบสอนและระบุสัปดาห์ที่ต้องการแลก');
                 return;
             }
 
             const sch1 = schedules.find(s => s.id === schId1);
-            const sch2 = schedules.find(s => s.id === schId2);
+            const gradeLevel = getGradeLevel(sch1.room);
 
-            if (!sch1 || !sch2) return;
+            if (!gradeLevel) {
+                showModal('ไม่พบระดับชั้น', `คาบนี้ไม่ได้ระบุระดับชั้น (ม.1-ม.6) ไว้ในช่องชั้นเรียน: ${sch1.room || '-'}\nทำให้ค้นหาคู่แลกไม่ได้`);
+                return;
+            }
 
-            if (sch1.teacherId !== sch2.teacherId) {
-                const conflict1 = schedules.find(s => s.teacherId === sch1.teacherId && s.day === sch2.day && s.period === sch2.period);
-                if (conflict1) {
-                    showModal('เวลาซ้อนทับ', 'ผู้ขอแลกมีสอนในคาบที่ต้องการแลกอยู่แล้ว');
-                    return;
-                }
-                const conflict2 = schedules.find(s => s.teacherId === sch2.teacherId && s.day === sch1.day && s.period === sch1.period);
-                if (conflict2) {
-                    showModal('เวลาซ้อนทับ', 'ผู้ที่ต้องการแลกด้วยมีสอนในคาบนั้นอยู่แล้ว');
-                    return;
-                }
+            // Find valid partners (same grade level)
+            const partners = schedules.filter(s2 => {
+                if (s2.id === sch1.id) return false;
+                const g2 = getGradeLevel(s2.room);
+                return g2 === gradeLevel;
+            });
+
+            const resultsText = document.getElementById('swap-partner-results');
+            const container = document.getElementById('swap-partner-container');
+            const select2 = document.getElementById('swap-schedule-2');
+
+            if (partners.length === 0) {
+                resultsText.innerHTML = `ไม่พบคาบสอนอื่นที่มีระดับชั้น <b>${gradeLevel}</b> ในระบบ`;
+                resultsText.classList.remove('hidden');
+                container.classList.add('hidden');
+                return;
+            }
+
+            resultsText.classList.add('hidden');
+            container.classList.remove('hidden');
+            
+            select2.innerHTML = `<option value="">— เลือกคาบที่ต้องการแลกด้วย —</option>` + partners.map(s2 => {
+                const t = teachers.find(x => x.id === s2.teacherId);
+                const subj = subjects.find(x => x.id === s2.subjectId);
+                return `<option value="${s2.id}">ครู${t?t.name:''} - ${subj?subj.code:''} ${s2.room||''} (วัน${dayNames[parseInt(s2.day)]} ${getPeriodName(parseInt(s2.period))})</option>`;
+            }).join('');
+        });
+
+        document.getElementById('btn-execute-swap').addEventListener('click', async () => {
+            const schId1 = document.getElementById('swap-schedule-1').value;
+            const schId2 = document.getElementById('swap-schedule-2').value;
+            const week = document.getElementById('swap-week').value;
+
+            if (!schId1 || !schId2 || !week) {
+                showModal('ข้อมูลไม่ครบ', 'กรุณาเลือกคาบให้ครบถ้วน');
+                return;
             }
 
             try {
-                const docRef1 = doc(db, getCollectionPath('schedules'), sch1.id);
-                const docRef2 = doc(db, getCollectionPath('schedules'), sch2.id);
+                await addDoc(collection(db, getCollectionPath('temporary_swaps')), {
+                    week: week,
+                    sch1Id: schId1,
+                    sch2Id: schId2,
+                    timestamp: new Date().toISOString()
+                });
 
-                await updateDoc(docRef1, { day: sch2.day, period: sch2.period });
-                await updateDoc(docRef2, { day: sch1.day, period: sch1.period });
-
-                showModal('สำเร็จ', 'สลับคาบสอนเรียบร้อยแล้ว');
+                showModal('สำเร็จ', 'บันทึกการสลับคาบชั่วคราวเรียบร้อยแล้ว');
                 
                 document.getElementById('swap-teacher-1').value = '';
-                document.getElementById('swap-teacher-2').value = '';
+                document.getElementById('swap-week').value = '';
                 updateSwapSchedules(1, '');
-                updateSwapSchedules(2, '');
+                document.getElementById('swap-partner-container').classList.add('hidden');
+                document.getElementById('swap-partner-results').classList.remove('hidden');
+                document.getElementById('swap-partner-results').innerText = 'กรุณาเลือกคาบและกด "ค้นหาคาบที่ระดับชั้นเดียวกัน"';
 
+                // Set filter-week to show the newly swapped week
+                const filterWeek = document.getElementById('filter-week');
+                if(filterWeek) filterWeek.value = week;
                 document.querySelector('[data-target="tab-schedule"]').click();
 
             } catch (err) {
                 console.error("Swap error:", err);
-                showModal('เกิดข้อผิดพลาด', 'ไม่สามารถสลับคาบได้');
+                showModal('เกิดข้อผิดพลาด', 'ไม่สามารถบันทึกการสลับคาบได้');
             }
         });
+
+        // Listen for filter-week change
+        const filterWeekInput = document.getElementById('filter-week');
+        if (filterWeekInput) {
+            filterWeekInput.addEventListener('change', renderMasterSchedule);
+        }
 
         // Find Sub Logic
         document.getElementById('btn-search-sub').addEventListener('click', () => {
